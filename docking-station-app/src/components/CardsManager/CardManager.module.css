@@ -1,0 +1,12 @@
+
+.item {
+  transition:
+    box-shadow 150ms ease,
+    transform 100ms ease;
+    transform: scale(1);
+
+  @mixin hover {
+    box-shadow: var(--mantine-shadow-md);
+    transform: scale(1.025);
+  }
+}
