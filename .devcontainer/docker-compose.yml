@@ -1,0 +1,22 @@
+
+services:
+  vsc-docking-station:
+    build:
+      context: ".."
+      dockerfile: .devcontainer/Dockerfile
+    container_name: vsc-docking-station
+    # network_mode: host
+    volumes:
+      - vsc-docking-station-vscode-server:/root/.vscode-server
+      - ..:/workspaces/docking-station:cached
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      # for homepage dashboard widget. More info: https://gethomepage.dev/latest/configs/docker/#automatic-service-discovery
+      - homepage.group=Dev Containers
+      - homepage.name=vsc-docking-station
+      - homepage.icon=code
+    command: sleep infinity
+    # entrypoint: "/workspaces/docking-station/entrypoint.sh"
+
+volumes:
+  vsc-docking-station-vscode-server:
