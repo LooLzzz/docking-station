@@ -1,28 +1,50 @@
 import traceback
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import ValidationException
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 from . import routes
+from .consts import NODE_ENV
 
 
 async def not_found(request: Request, exc: Exception):
+    resp = {'message': str(exc)}
+
+    match exc:
+        case HTTPException():
+            resp['message'] = exc.detail
+
     return JSONResponse(
-        {
-            'error': str(exc),
-        },
-        status_code=400,
+        content=resp,
+        status_code=404,
     )
 
 
 async def server_error(request: Request, exc: Exception):
-    tb = traceback.format_exc()
+    status_code = 500
+    resp = {'message': str(exc)}
+
+    if NODE_ENV == 'development':
+        resp['traceback'] = traceback.format_exc()
+
+    match exc:
+        case ValidationException():
+            resp['message'] = str(exc).split('\n', 1)[0].strip(':')
+            resp['errors'] = exc.errors()
+            if 'Request' in type(exc).__name__:
+                status_code = 400
+
+        case ValidationError():
+            resp['message'] = exc.title
+            resp['errors'] = exc.errors()
+            if 'Request' in type(exc).__name__:
+                status_code = 400
+
     return JSONResponse(
-        {
-            'error': str(exc),
-            'traceback': tb,
-        },
-        status_code=500,
+        content=resp,
+        status_code=status_code,
     )
 
 
@@ -30,6 +52,7 @@ app = FastAPI(
     exception_handlers={
         404: not_found,
         500: server_error,
+        ValidationError: server_error,
     },
 )
 app.include_router(routes.root_router, prefix='/api')

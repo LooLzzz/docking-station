@@ -10,6 +10,7 @@ services:
       - vsc-docking-station-vscode-server:/root/.vscode-server
       - ..:/workspaces/docking-station:cached
       - /var/run/docker.sock:/var/run/docker.sock
+      - /mnt/big-vault/appdata/compose:/mnt/big-vault/appdata/compose
     labels:
       # for homepage dashboard widget. More info: https://gethomepage.dev/latest/configs/docker/#automatic-service-discovery
       - homepage.group=Dev Containers

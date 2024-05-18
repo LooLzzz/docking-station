@@ -9,7 +9,7 @@
     // "features": {},
 
     // Use 'postCreateCommand' to run commands after the container is created.
-    "postCreateCommand": "cd ./docking-station-app && (bun install & pip install -r requirements.txt)",
+    "postCreateCommand": "cd ./docking-station-app && concurrently --names=BUN,PIP --prefix-colors=auto \"bun install\" \"pip install -r requirements.txt\"",
 
     // Use 'postStartCommand' to run commands after the container is started.
     // "postStartCommand": "",

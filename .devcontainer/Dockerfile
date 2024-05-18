@@ -8,6 +8,11 @@ RUN apt-get update \
 # install docker
 RUN curl -fsSL https://get.docker.com | bash
 
+# install regctl
+# https://github.com/regclient/regclient
+RUN curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/bin/regctl
+RUN chmod 755 /usr/bin/regctl
+
 # install bun
 RUN curl -fsSL https://bun.sh/install | bash
 
