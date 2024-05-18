@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "fastapi-dev": "python3 -m uvicorn src.app.api.main:app --reload --port 3001",
+    "fastapi-dev": "fastapi dev src/app/api/main.py --reload --port 3001",
     "next-dev": "next dev",
     "dev": "concurrently --names=WEB,SERVER --prefix-colors=auto \"bun run next-dev\" \"bun run fastapi-dev\"",
     "build": "next build",
