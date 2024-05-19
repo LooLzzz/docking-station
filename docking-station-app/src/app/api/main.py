@@ -2,13 +2,25 @@ import traceback
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import ValidationException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from . import routes
 from .consts import NODE_ENV
 
+app = FastAPI()
+app.include_router(routes.root_router, prefix='/api')
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_headers=['*'],
+    allow_methods=['*'],
+    allow_origins=['*'],
+)
 
+
+@app.exception_handler(404)
 async def not_found(request: Request, exc: Exception):
     resp = {'message': str(exc)}
 
@@ -22,6 +34,8 @@ async def not_found(request: Request, exc: Exception):
     )
 
 
+@app.exception_handler(500)
+@app.exception_handler(ValidationError)
 async def server_error(request: Request, exc: Exception):
     status_code = 500
     resp = {'message': str(exc)}
@@ -46,13 +60,3 @@ async def server_error(request: Request, exc: Exception):
         content=resp,
         status_code=status_code,
     )
-
-
-app = FastAPI(
-    exception_handlers={
-        404: not_found,
-        500: server_error,
-        ValidationError: server_error,
-    },
-)
-app.include_router(routes.root_router, prefix='/api')
