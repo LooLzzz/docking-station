@@ -1,55 +1,61 @@
 
-export interface MonitorSettings {
-  lowThresholdMs: number
-  highThresholdMs: number
-  pingIntervalSec: number
-}
-
-export interface MonitorSettingsUpdate {
-  lowThresholdMs?: number
-  highThresholdMs?: number
-  pingIntervalSec?: number
-}
-
-export interface MonitoredWebsiteResponse {
-  url: string
-  isActive: boolean
-  friendlyName: string
-  id: number
+export interface DockerImageResponse {
+  id: string
   createdAt: string
-  updatedAt: string
+  hasUpdates: boolean
+  imageName: string
+  imageTag: string
+  repoLocalDigest: string
+  repoRemoteDigest: string
 }
 
-export interface MonitoredWebsite extends MonitoredWebsiteResponse {
+export interface DockerImage extends DockerImageResponse {
   createdAt: Date
-  updatedAt: Date
 }
 
-export interface MonitoredWebsiteCreate {
-  url: string
-  friendlyName: string
-  isActive: boolean
-}
-
-export interface MonitoredWebsiteUpdate {
-  id: number
-  url?: string
-  isActive?: boolean
-  friendlyName?: string
-}
-
-export interface HistoryRecordResponse {
-  latencyMs: number
-  websiteId: number
-  id: number
+export interface DockerContainerResponse {
+  id: string
   createdAt: string
+  hasUpdates: boolean
+  image: DockerImageResponse
+  // labels: { [key: string]: string }
+  name: string
+  ports: {
+    [key: string]: {
+      hostIp: string
+      hostPort: string
+    }[]
+  }
+  stackName?: string
+  serviceName?: string
+  status: string
 }
 
-export interface HistoryRecordClearResponse {
-  affectedRows: number
-  id: number
-}
-
-export interface HistoryRecord extends HistoryRecordResponse {
+export interface DockerContainer extends DockerContainerResponse {
   createdAt: Date
+  image: DockerImage
+}
+
+export interface DockerStackResponse {
+  configFiles: string[]
+  services: DockerContainerResponse[]
+  created: int
+  dead: int
+  exited: int
+  hasUpdates: boolean
+  name: string
+  paused: int
+  restarting: int
+  running: int
+}
+
+export interface DockerStack extends DockerStackResponse {
+  services: DockerContainer[]
+}
+
+export interface DockerStackUpdateRequest {
+  stack: string
+  inferEnvfile?: boolean
+  pruneImages?: boolean
+  restartContainers?: boolean
 }

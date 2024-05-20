@@ -1,37 +1,44 @@
 'use client'
 
-import { useGetAllMonitoredWebsites } from '@/hooks/monitoring'
-import { useAppSettingsStore } from '@/store/zustand'
+import { useListComposeStacks } from '@/hooks/stacks'
 import { SimpleGrid, rem } from '@mantine/core'
 import Card from './Card'
 import classes from './CardManager.module.css'
 import EmptyCard from './EmptyCard'
 
 export default function CardsManager() {
-  const { lessAnimations } = useAppSettingsStore()
-  const { data = [], isLoading } = useGetAllMonitoredWebsites()
+  const { data = [], isLoading } = useListComposeStacks({ refetchOnWindowFocus: false })
+  const services = (
+    data
+      .flatMap(stack => stack.services)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  )
 
   return (
     <div>
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
         {
-          data.map((website) => (
+          services.map(({ stackName, serviceName }) => (
             <Card
-              key={website.id}
-              website={website}
-              className={lessAnimations ? undefined : classes.item}
+              key={`${stackName}/${serviceName}`}
+              stackName={stackName!}
+              serviceName={serviceName!}
+              className={classes.item}
               miw={rem(300)}
               mih={rem(150)}
             />
           ))
         }
 
-        <EmptyCard
-          loading={isLoading}
-          className={lessAnimations ? undefined : classes.item}
-          miw={rem(300)}
-          mih={rem(150)}
-        />
+        {
+          (isLoading || !data?.length) &&
+          <EmptyCard
+            loading={isLoading}
+            className={classes.item}
+            miw={rem(300)}
+            mih={rem(150)}
+          />
+        }
       </SimpleGrid>
     </div>
   )

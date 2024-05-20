@@ -22,14 +22,14 @@ class DockerStack(AliasedBaseModel):
     restarting: int = 0
     running: int = 0
     config_files: list[Path] = Field(default_factory=list)
-    containers: list[DockerContainer] = Field(default_factory=list)
+    services: list[DockerContainer] = Field(default_factory=list)
 
     @computed_field
     @property
     def has_updates(self) -> bool:
         return any(
             item.image.has_updates
-            for item in self.containers
+            for item in self.services
         )
 
 

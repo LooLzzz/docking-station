@@ -19,8 +19,6 @@
     ],
     "paths": {
       "@/*": ["/*"],
-      "@/api": ["app/api"],
-      "@/api/*": ["app/api/*"],
       "@/components": ["components"],
       "@/components/*": ["components/*"],
       "@/hooks": ["hooks"],

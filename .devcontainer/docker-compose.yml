@@ -16,6 +16,7 @@ services:
       - homepage.group=Dev Containers
       - homepage.name=vsc-docking-station
       - homepage.icon=code
+      - homepage.href=http://localhost:3000
     command: sleep infinity
     # entrypoint: "/workspaces/docking-station/entrypoint.sh"
 

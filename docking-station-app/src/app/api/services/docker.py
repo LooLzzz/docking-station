@@ -2,14 +2,18 @@ import asyncio
 
 from fastapi import HTTPException
 from python_on_whales import DockerClient, docker
-from python_on_whales.components.container.cli_wrapper import (Container as WhalesContainer,
-                                                               DockerContainerListFilters)
+from python_on_whales.components.container.cli_wrapper import \
+    Container as WhalesContainer
+from python_on_whales.components.container.cli_wrapper import \
+    DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
+from ..consts import IGNORED_COMPOSE_PROJECT_PATTERN
 from ..schemas import DockerContainer, DockerImage, DockerStack
 from .regctl import get_image_remote_digest
 
 __all__ = [
+    'get_compose_service_container',
     'get_compose_stack',
     'get_image',
     'list_compose_stacks',
@@ -52,12 +56,21 @@ async def list_containers(filters: DockerContainerListFilters = None):
     )
 
 
+async def get_container(container_id: str):
+    containers = await list_containers(
+        filters={'id': container_id}
+    )
+    if not containers:
+        raise KeyError(container_id)
+    return containers[0]
+
+
 async def list_images(repository_or_tag: str = None,
                       filters: dict[str, str] = None):
 
     async def _task(image: WhalesImage):
         repo_local_digest = image.repo_digests[0] if image.repo_digests else None
-        repo_tag =  image.repo_tags[0] if image.repo_tags else None
+        repo_tag = image.repo_tags[0] if image.repo_tags else None
         repo_remote_digest = None
         has_updates = False
 
@@ -103,7 +116,7 @@ async def get_image(repository_or_tag: str):
 async def list_compose_stacks(filters: DockerContainerListFilters = None):
 
     async def _task(stack: DockerStack):
-        stack.containers = await list_containers(
+        stack.services = await list_containers(
             filters={'label': f'com.docker.compose.project={stack.name}'}
         )
         return stack
@@ -112,6 +125,7 @@ async def list_compose_stacks(filters: DockerContainerListFilters = None):
     stacks = await asyncio.gather(*[
         _task(DockerStack.model_validate(stack.model_dump()))
         for stack in _stacks
+        if not IGNORED_COMPOSE_PROJECT_PATTERN.search(stack.name)
     ])
 
     return sorted(
@@ -120,30 +134,30 @@ async def list_compose_stacks(filters: DockerContainerListFilters = None):
     )
 
 
-async def get_compose_stack(stack: str):
+async def get_compose_stack(stack_name: str):
     stacks = await list_compose_stacks(
-        filters={'name': stack}
+        filters={'name': stack_name}
     )
     if not stacks:
-        raise KeyError(stack)
+        raise KeyError(stack_name)
     return stacks[0]
 
 
-async def update_compose_stack(stack: str,
-                               service: str = None,
+async def update_compose_stack(stack_name: str,
+                               service_name: str = None,
                                infer_envfile: bool = True,
                                restart_containers: bool = True,
                                prune_images: bool = False):
     env_file = None
     config_files = None
     stacks = docker.compose.ls(
-        filters={'name': stack},
+        filters={'name': stack_name},
     )
 
     if not stacks:
         raise HTTPException(
             status_code=404,
-            detail=f'Compose stack {stack!r} not found',
+            detail=f'Compose stack {stack_name!r} not found',
         )
 
     config_files = stacks[0].config_files
@@ -164,14 +178,14 @@ async def update_compose_stack(stack: str,
 
     if restart_containers:
         output = client.compose.up(
-            services=service,
+            services=service_name,
             pull='always',
             detach=True,
             stream_logs=True,
         )
     else:
         output = client.compose.pull(
-            services=service,
+            services=service_name,
             stream_logs=True,
         )
 
@@ -180,7 +194,20 @@ async def update_compose_stack(stack: str,
 
     # TODO: output aggregation, response model
     return {
-        'stack_name': stack,
-        'service': service,
+        'stack_name': stack_name,
+        'service': service_name,
         'output': output,
     }
+
+
+async def get_compose_service_container(stack_name: str, service_name: str):
+    stack = await get_compose_stack(stack_name)
+    container = next(
+        (item
+         for item in stack.services
+         if item.service_name == service_name),
+        None,
+    )
+    if not container:
+        raise KeyError(service_name)
+    return container

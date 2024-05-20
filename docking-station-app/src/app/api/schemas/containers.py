@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import computed_field
+from pydantic import Field, computed_field
 
 from .common import AliasedBaseModel
 from .images import DockerImage
@@ -21,7 +21,7 @@ class DockerContainer(AliasedBaseModel):
     id: str
     created_at: datetime
     image: DockerImage
-    labels: dict[str, str]
+    labels: dict[str, str] = Field(exclude=True)
     name: str
     ports: dict[str, list[DockerContainerPort] | None]
     status: str
@@ -30,6 +30,16 @@ class DockerContainer(AliasedBaseModel):
     @property
     def has_updates(self) -> bool:
         return self.image.has_updates
+
+    @computed_field
+    @property
+    def stack_name(self) -> str | None:
+        return self.labels.get('com.docker.compose.project', None)
+
+    @computed_field
+    @property
+    def service_name(self) -> str | None:
+        return self.labels.get('com.docker.compose.service', None)
 
 
 class DockerContainerResponse(DockerContainer):

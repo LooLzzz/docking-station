@@ -20,4 +20,10 @@ RUN curl -fsSL https://bun.sh/install | bash
 # https://www.npmjs.com/package/concurrently
 RUN npm install -g concurrently
 
+# install jupyter notebook for debugging purposes
+RUN pip install notebook
+
+# set zsh as default shell
+RUN chsh -s /bin/zsh
+
 CMD [ "sleep", "infinity" ]

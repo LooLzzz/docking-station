@@ -1,8 +1,6 @@
 'use client'
 
-import deeperLogo from '@/public/deeper-logo.png'
-import { AppShell, Group } from '@mantine/core'
-import Image from 'next/image'
+import { AppShell, Group, Title } from '@mantine/core'
 
 export default function BasicAppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -12,17 +10,10 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     >
 
       <AppShell.Header>
-        <Group h='100%'>
-          <Image
-            fill
-            src={deeperLogo}
-            alt='Deeper Logo'
-            style={{
-              objectFit: 'contain',
-              objectPosition: 'left',
-              paddingLeft: '10px',
-            }}
-          />
+        <Group h='100%' pl='xl'>
+          <Title order={1}>
+            Docking Station
+          </Title>
         </Group>
       </AppShell.Header>
 

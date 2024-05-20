@@ -1,5 +1,5 @@
-import * as monitoring from './monitoring'
+import * as stacks from './stacks'
 
 export {
-  monitoring,
+  stacks,
 }
