@@ -1,15 +1,17 @@
 import asyncio
-from collections import defaultdict
 
 from fastapi import HTTPException
 from python_on_whales import DockerClient, docker
-from python_on_whales.components.container.cli_wrapper import (
-    Container, DockerContainerListFilters)
+from python_on_whales.components.container.cli_wrapper import (Container as WhalesContainer,
+                                                               DockerContainerListFilters)
+from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
-from ..schemas import ListStacksItem
+from ..schemas import DockerContainer, DockerImage, DockerStack
 from .regctl import get_image_remote_digest
 
 __all__ = [
+    'get_compose_stack',
+    'get_image',
     'list_compose_stacks',
     'list_containers',
     'list_images',
@@ -18,93 +20,113 @@ __all__ = [
 
 
 async def list_containers(filters: DockerContainerListFilters = None):
-    return docker.container.list(
+
+    async def _task(container: WhalesContainer):
+        image_tag = (container.config.image.split('@', 1)[0]
+                                           .removeprefix('registry.hub.docker.com/')
+                                           .removeprefix('library/'))
+        image = await get_image(image_tag)
+        return DockerContainer(
+            id=container.id,
+            created_at=container.created,
+            image=image,
+            labels=container.config.labels,
+            name=container.name,
+            ports=container.network_settings.ports,
+            status=container.state.status,
+        )
+
+    _containers = docker.container.list(
         filters=filters or {},
         all=True,
+    )
+    containers = await asyncio.gather(*[
+        _task(item)
+        for item in _containers
+    ])
+
+    return sorted(
+        containers,
+        key=lambda x: x.created_at,
+        reverse=True,
     )
 
 
 async def list_images(repository_or_tag: str = None,
                       filters: dict[str, str] = None):
-    return docker.image.list(
+
+    async def _task(image: WhalesImage):
+        repo_local_digest = image.repo_digests[0] if image.repo_digests else None
+        repo_tag =  image.repo_tags[0] if image.repo_tags else None
+        repo_remote_digest = None
+        has_updates = False
+
+        if repo_local_digest:
+            if not repo_tag:
+                repo_tag = repo_local_digest.split('@', 1)[0]
+            repo_remote_digest = await get_image_remote_digest(repo_tag)
+            has_updates = repo_local_digest != repo_remote_digest
+
+        return DockerImage(
+            id=image.id,
+            created_at=image.created,
+            has_updates=has_updates,
+            repo_local_digest=repo_local_digest,
+            repo_remote_digest=repo_remote_digest,
+            repo_tag=repo_tag,
+        )
+
+    _images = docker.image.list(
         repository_or_tag=repository_or_tag,
         filters=filters or {},
         all=True,
     )
-
-
-async def _populate_stacks_with_containers(containers: list[Container]):
-    LOCKS = defaultdict(asyncio.Lock)
-    stacks = defaultdict(lambda: {
-        'project_name': None,
-        'config_files': [],
-        'environment_files': [],
-        'services': []
-    })
-
-    async def _task(container: Container):
-        labels = container.config.labels
-        project_name = labels.get('com.docker.compose.project', None)
-        if project_name:
-            config_files = labels.get('com.docker.compose.project.config_files', '').split(',')
-            environment_files = labels.get('com.docker.compose.project.environment_file', '').split(',')
-            repo_digests = docker.image.inspect(container.image).repo_digests
-            local_digest = repo_digests[0].split('@', 1)[1] if repo_digests else None
-            service_name = labels.get('com.docker.compose.service', '')
-
-            remote_digest = None
-            if local_digest:
-                remote_digest = await get_image_remote_digest(container.config.image, reraise=False)
-
-            async with LOCKS[project_name]:
-                stacks[project_name]['project_name'] = project_name
-                stacks[project_name]['services'].append({
-                    'container_name': container.name,
-                    'has_updates': all([local_digest,
-                                        remote_digest,
-                                        local_digest != remote_digest]),
-                    'image_id': container.image,
-                    'image_local_digest': local_digest,
-                    'image_name': container.config.image,
-                    'image_remote_digest': remote_digest,
-                    'service_name': service_name,
-                })
-
-                for filepath in environment_files:
-                    if filepath not in stacks[project_name]['environment_files']:
-                        stacks[project_name]['environment_files'].append(filepath)
-
-                for filepath in config_files:
-                    if filepath not in stacks[project_name]['config_files']:
-                        stacks[project_name]['config_files'].append(filepath)
-
-    await asyncio.wait([
-        asyncio.create_task(
-            _task(container)
-        ) for container in containers
+    images = await asyncio.gather(*[
+        _task(item)
+        for item in _images
     ])
-    return stacks
+
+    return sorted(
+        images,
+        key=lambda x: x.created_at,
+        reverse=True,
+    )
+
+
+async def get_image(repository_or_tag: str):
+    images = await list_images(repository_or_tag=repository_or_tag)
+    if not images:
+        raise KeyError(repository_or_tag)
+    return images[0]
 
 
 async def list_compose_stacks(filters: DockerContainerListFilters = None):
-    stacks = {}
-    containers = await list_containers(filters)
-    if containers:
-        stacks = await _populate_stacks_with_containers(containers)
 
-    return [
-        ListStacksItem.model_validate(stack)
-        for stack in stacks.values()
-    ]
+    async def _task(stack: DockerStack):
+        stack.containers = await list_containers(
+            filters={'label': f'com.docker.compose.project={stack.name}'}
+        )
+        return stack
 
+    _stacks = docker.compose.ls(all=True, filters=filters or {})
+    stacks = await asyncio.gather(*[
+        _task(DockerStack.model_validate(stack.model_dump()))
+        for stack in _stacks
+    ])
 
-async def get_compose_stacks(stack: str):
-    stacks = await list_compose_stacks(
-        filters={
-            'label': f'com.docker.compose.project={stack}'
-        }
+    return sorted(
+        stacks,
+        key=lambda x: x.name,
     )
-    return stacks[0] if stacks else {}
+
+
+async def get_compose_stack(stack: str):
+    stacks = await list_compose_stacks(
+        filters={'name': stack}
+    )
+    if not stacks:
+        raise KeyError(stack)
+    return stacks[0]
 
 
 async def update_compose_stack(stack: str,

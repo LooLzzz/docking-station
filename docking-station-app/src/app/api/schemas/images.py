@@ -3,12 +3,19 @@ from datetime import datetime
 from .common import AliasedBaseModel
 
 __all__ = [
-    'ListImagesResponseItem',
+    'DockerImage',
+    'DockerImageResponse',
 ]
 
 
-class ListImagesResponseItem(AliasedBaseModel):
+class DockerImage(AliasedBaseModel):
     id: str
-    repo_tags: list[str]
-    repo_digests: list[str]
     created_at: datetime
+    has_updates: bool
+    repo_local_digest: str | None
+    repo_remote_digest: str | None
+    repo_tag: str
+
+
+class DockerImageResponse(AliasedBaseModel):
+    """Alias for `DockerImage`"""
