@@ -5,7 +5,7 @@ services:
       context: ".."
       dockerfile: .devcontainer/Dockerfile
     container_name: vsc-docking-station
-    # network_mode: host
+    env_file: .env
     volumes:
       - vsc-docking-station-vscode-server:/root/.vscode-server
       - ..:/workspaces/docking-station:cached

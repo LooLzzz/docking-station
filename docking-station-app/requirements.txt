@@ -1,2 +1,3 @@
+aiohttp==3.9.5
 fastapi==0.111.0
 python-on-whales==0.71.0

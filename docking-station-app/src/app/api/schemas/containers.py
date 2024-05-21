@@ -21,7 +21,7 @@ class DockerContainer(AliasedBaseModel):
     id: str
     created_at: datetime
     image: DockerImage
-    labels: dict[str, str] = Field(exclude=True)
+    labels: dict[str, str]
     name: str
     ports: dict[str, list[DockerContainerPort] | None]
     status: str

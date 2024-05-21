@@ -16,7 +16,7 @@ class DockerImage(AliasedBaseModel):
     has_updates: bool
     repo_local_digest: str | None
     repo_remote_digest: str | None
-    repo_tag: str = Field(exclude=True)
+    repo_tag: str
 
     @computed_field
     @property
