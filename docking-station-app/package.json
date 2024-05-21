@@ -18,6 +18,7 @@
     "@mantine/notifications": "^7.5.1",
     "@tabler/icons-react": "^2.47.0",
     "axios": "^1.6.7",
+    "immer": "^10.1.1",
     "next": "14.1.0",
     "react": "^18",
     "react-dom": "^18",

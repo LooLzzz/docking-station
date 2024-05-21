@@ -1,17 +1,26 @@
 'use client'
 
 import { useListComposeStacks } from '@/hooks/stacks'
+import { useAppSettingsStore } from '@/store/zustand'
 import { SimpleGrid, rem } from '@mantine/core'
 import Card from './Card'
 import classes from './CardManager.module.css'
 import EmptyCard from './EmptyCard'
 
 export default function CardsManager() {
+  const filters = useAppSettingsStore(state => state.filters)
   const { data = [], isLoading } = useListComposeStacks({ refetchOnWindowFocus: false })
   const services = (
     data
       .flatMap(stack => stack.services)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .filter(service => {
+        if (filters.updatesOnly) {
+          return service.hasUpdates
+        }
+
+        return true
+      })
   )
 
   return (
@@ -31,7 +40,7 @@ export default function CardsManager() {
         }
 
         {
-          (isLoading || !data?.length) &&
+          (isLoading || !services?.length) &&
           <EmptyCard
             loading={isLoading}
             className={classes.item}
