@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 
 from fastapi import HTTPException
 from python_on_whales import DockerClient, docker
@@ -8,7 +9,8 @@ from python_on_whales.components.container.cli_wrapper import \
     DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
-from ..consts import IGNORED_COMPOSE_PROJECT_PATTERN
+from ..consts import (IGNORED_COMPOSE_PROJECT_PATTERN,
+                      DOCKINGSTATION_LABEL__IGNORE)
 from ..schemas import DockerContainer, DockerImage, DockerStack
 from .regctl import get_image_remote_digest
 
@@ -33,6 +35,7 @@ async def list_containers(filters: DockerContainerListFilters = None):
         return DockerContainer(
             id=container.id,
             created_at=container.created,
+            uptime=datetime.now(container.state.started_at.tzinfo) - container.state.started_at,
             image=image,
             labels=container.config.labels,
             name=container.name,
@@ -47,6 +50,7 @@ async def list_containers(filters: DockerContainerListFilters = None):
     containers = await asyncio.gather(*[
         _task(item)
         for item in _containers
+        if not item.config.labels.get(DOCKINGSTATION_LABEL__IGNORE, False)
     ])
 
     return sorted(
@@ -77,8 +81,8 @@ async def list_images(repository_or_tag: str = None,
         if repo_local_digest:
             if not repo_tag:
                 repo_tag = repo_local_digest.split('@', 1)[0]
-            repo_remote_digest = await get_image_remote_digest(repo_tag)
-            has_updates = repo_local_digest != repo_remote_digest
+            if repo_remote_digest := await get_image_remote_digest(repo_tag):
+                has_updates = repo_local_digest != repo_remote_digest
 
         return DockerImage(
             id=image.id,
@@ -150,6 +154,8 @@ async def update_compose_stack(stack_name: str,
                                prune_images: bool = False):
     env_file = None
     config_files = None
+    output = []
+
     stacks = docker.compose.ls(
         filters={'name': stack_name},
     )
@@ -177,26 +183,47 @@ async def update_compose_stack(stack_name: str,
     )
 
     if restart_containers:
-        output = client.compose.up(
-            services=service_name,
-            pull='always',
-            detach=True,
-            stream_logs=True,
-        )
+        output.append('$ docker compose up')
+        output.extend([
+            value.decode().strip()
+            for (_std_type, value)
+            in client.compose.up(
+                services=service_name,
+                pull='always',
+                detach=True,
+                stream_logs=True,
+            )
+        ])
     else:
-        output = client.compose.pull(
-            services=service_name,
-            stream_logs=True,
-        )
+        output.append('> docker compose pull')
+        output.extend([
+            std_output.decode().strip()
+            for (_std_type, std_output)
+            in client.compose.pull(
+                services=service_name,
+                stream_logs=True,
+            )
+        ])
 
     if prune_images:
-        output = client.image.prune()
+        output.extend(['', '$ docker image prune'])
+        output.extend(
+            client.image.prune().split('\n')
+        )
 
-    # TODO: output aggregation, response model
+    # success = is container running
+    container_status = next(
+        bool(container.state.running)
+        for container in docker.container.list(
+            filters={'label': f'com.docker.compose.project={stack_name}'},
+            all=True,
+        )
+        if container.config.labels.get('com.docker.compose.service') == service_name
+    )
+
     return {
-        'stack_name': stack_name,
-        'service': service_name,
         'output': output,
+        'success': container_status,
     }
 
 

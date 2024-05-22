@@ -1,11 +1,11 @@
 'use client'
 
+import { useListComposeStacks } from '@/hooks/stacks'
 import { useAppSettingsStore } from '@/store/zustand'
 import { Button, Center, Group, Card as MantineCard, Stack, Switch, Title } from '@mantine/core'
-import { useQueryClient } from 'react-query'
 
 export default function AppSettings() {
-  const client = useQueryClient()
+  const { isFetching, refetch } = useListComposeStacks({ refetchOnWindowFocus: false })
   const { updatesOnly, toggleUpdatesOnlyFilter } = useAppSettingsStore(state => ({
     toggleUpdatesOnlyFilter: state.toggleUpdatesOnlyFilter,
     updatesOnly: state.filters.updatesOnly,
@@ -23,7 +23,8 @@ export default function AppSettings() {
           <Group wrap='nowrap' gap='xs' justify='center'>
             <Button
               variant='filled'
-              onClick={() => client.invalidateQueries(['stacks'])}
+              loading={isFetching}
+              onClick={() => refetch()}
             >
               Refresh all
             </Button>

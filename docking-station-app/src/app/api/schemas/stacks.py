@@ -43,5 +43,6 @@ class DockerStackResponse(DockerStack):
     """Alias for `DockerStack`"""
 
 
-class DockerStackUpdateResponse(DockerStack):
-    """Alias for `DockerStack`"""
+class DockerStackUpdateResponse(CamelCaseAliasedBaseModel):
+    output: list[str]
+    success: bool

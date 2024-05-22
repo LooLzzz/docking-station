@@ -31,7 +31,7 @@ export default function EmptyCard({
             * But nobody came.
           </Text>
         }
-        <LoadingOverlay visible={loading} />
+        <LoadingOverlay visible={loading}/>
       </Center>
     </MantineCard>
   )

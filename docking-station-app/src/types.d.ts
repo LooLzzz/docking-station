@@ -16,9 +16,10 @@ export interface DockerImage extends DockerImageResponse {
 export interface DockerContainerResponse {
   id: string
   createdAt: string
+  uptime: string
   hasUpdates: boolean
   image: DockerImageResponse
-  // labels: { [key: string]: string }
+  labels: { [key: string]: string }
   name: string
   ports: {
     [key: string]: {
@@ -53,9 +54,13 @@ export interface DockerStack extends DockerStackResponse {
   services: DockerContainer[]
 }
 
-export interface DockerStackUpdateRequest {
-  stack: string
+export interface DockerServiceUpdateRequest {
   inferEnvfile?: boolean
   pruneImages?: boolean
   restartContainers?: boolean
+}
+
+export interface DockerServiceUpdateResponse {
+  success: boolean
+  output: string[]
 }

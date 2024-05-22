@@ -2,10 +2,12 @@ import { apiRoutes } from '@/routes'
 import type {
   DockerContainer,
   DockerContainerResponse,
+  DockerServiceUpdateRequest,
+  DockerServiceUpdateResponse,
   DockerStack,
-  DockerStackResponse,
-  DockerStackUpdateRequest
+  DockerStackResponse
 } from '@/types'
+import { notifications } from '@mantine/notifications'
 import axios from 'axios'
 import { UseQueryOptions, useMutation, useQuery, useQueryClient } from 'react-query'
 import { parseDockerContainerDates, parseDockerStackDates } from './utils'
@@ -87,44 +89,49 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
   )
 }
 
-export const useUpdateComposeStack = <TData extends DockerStack, TVar extends DockerStackUpdateRequest>() => {
-  const queryClient = useQueryClient()
+export const useUpdateComposeStackService = (
+  <
+    TData extends DockerServiceUpdateResponse,
+    TVar extends DockerServiceUpdateRequest,
+  >(
+    stackName: string,
+    serviceName: string,
+  ) => {
 
-  return useMutation<TData, unknown, TVar>(
-    async (options) => {
-      const { stack, ...rest } = options
-      const resp = await axios.post(
-        apiRoutes.updateComposeStack(stack),
-        rest
-      )
-      return resp.data
-    },
+    const queryClient = useQueryClient()
 
-    {
-      onSuccess: (data) => {
-        queryClient.invalidateQueries(['stacks', data.name])
+    return useMutation<TData, Error, TVar>(
+      async (vars) => {
+        const { data: { output, success } } = await axios.post<TData>(
+          apiRoutes.updateComposeStackService(stackName, serviceName),
+          vars
+        )
+
+        if (!success)
+          throw new Error(output.join('\n'))
+
+        return { output, success } as TData
       },
-    }
-  )
-}
 
-export const useUpdateComposeStackService = <TData extends DockerStack, TVar extends DockerStackUpdateRequest>() => {
-  const queryClient = useQueryClient()
+      {
+        mutationKey: ['stacks', stackName, serviceName],
+        onSuccess: () => {
+          queryClient.invalidateQueries(['stacks', stackName, serviceName])
+          notifications.show({
+            title: 'Service updated',
+            message: 'The service has been updated successfully',
+            color: 'teal',
+          })
+        },
 
-  return useMutation<TData, unknown, TVar>(
-    async (vars) => {
-      const { stack, ...rest } = vars
-      const resp = await axios.post<TData>(
-        apiRoutes.updateComposeStack(stack),
-        rest
-      )
-      return resp.data
-    },
-
-    {
-      onSuccess: (data) => {
-        queryClient.invalidateQueries(['stacks', data.name])
-      },
-    }
-  )
-}
+        onError(error) {
+          notifications.show({
+            title: 'Service update failed',
+            message: error.message,
+            color: 'red',
+          })
+        },
+      }
+    )
+  }
+)

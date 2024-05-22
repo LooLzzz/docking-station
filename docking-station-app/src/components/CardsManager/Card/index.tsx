@@ -1,6 +1,6 @@
 'use client'
 
-import { useGetComposeService } from '@/hooks/stacks'
+import { useGetComposeService, useUpdateComposeStackService } from '@/hooks/stacks'
 import {
   ActionIcon,
   ColorSwatch,
@@ -12,7 +12,17 @@ import {
   Tooltip,
   rem
 } from '@mantine/core'
-import { IconCalendar, IconCloudDownload, IconDeviceFloppy, IconInfoCircle, IconPencil, IconRefresh, IconTag } from '@tabler/icons-react'
+import {
+  IconCalendar,
+  IconCheck,
+  IconCloudDownload,
+  IconDeviceFloppy,
+  IconExclamationCircle,
+  IconInfoCircle,
+  IconPencil,
+  IconRefresh,
+  IconTag
+} from '@tabler/icons-react'
 import { useQueryClient } from 'react-query'
 
 interface CardProps {
@@ -46,6 +56,7 @@ export default function Card({
     refetchOnWindowFocus: false,
     enabled: false,  // no auto-fetch
   })
+  const { mutate, isLoading: isMutating } = useUpdateComposeStackService(stackName, serviceName)
 
   return (
     <MantineCard
@@ -57,6 +68,54 @@ export default function Card({
       radius='md'
       className={className}
     >
+      <Group
+        pos='absolute'
+        top={18}
+        right={18}
+        gap={5}
+        wrap='nowrap'
+      >
+        <Tooltip
+          withArrow
+          label={data?.hasUpdates ? 'Updates available' : 'Up to date'}
+        >
+          {
+            data?.hasUpdates
+              ? <IconExclamationCircle color='#f6bc2c' />
+              : <IconCheck color='#1ed760' />
+          }
+        </Tooltip>
+
+        {
+          data?.hasUpdates &&
+          <Tooltip withArrow label='Update Service'>
+            <ActionIcon
+              color='gray'
+              variant='transparent'
+              onClick={() => mutate({})}
+            >
+              <IconCloudDownload
+                size={20}
+                stroke={2.5}
+              />
+            </ActionIcon>
+          </Tooltip>
+        }
+
+        <Tooltip withArrow label='Refresh'>
+          <ActionIcon
+            color='gray'
+            variant='transparent'
+            onClick={() => refetch()}
+          >
+            <IconRefresh
+              size={20}
+              stroke={2.5}
+            />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+
       <Stack gap={5}>
         <Group wrap='nowrap'>
           <Tooltip withArrow label='Container name'>
@@ -66,54 +125,9 @@ export default function Card({
               color='gray'
             />
           </Tooltip>
-          <Group gap={0} wrap='nowrap' flex={1}>
-            <Text fw='bold' w='100%' truncate='end'>
-              {data?.name}
-            </Text>
-
-            <Tooltip
-              withArrow
-              label={data?.hasUpdates ? 'Updates available' : 'Up to date'}
-            >
-              <ColorSwatch
-                color={data?.hasUpdates ? colors.orange : colors.green}
-                size={20}
-                mt={1}
-                mr={5}
-                radius='xl'
-              />
-            </Tooltip>
-
-            {
-              data?.hasUpdates &&
-              <Tooltip withArrow label='Update Service'>
-                <ActionIcon
-                  color='gray'
-                  variant='transparent'
-                  // TODO: implement update service
-                  onClick={() => ({})}
-                >
-                  <IconCloudDownload
-                    size={20}
-                    stroke={2.5}
-                  />
-                </ActionIcon>
-              </Tooltip>
-            }
-
-            <Tooltip withArrow label='Refresh'>
-              <ActionIcon
-                color='gray'
-                variant='transparent'
-                onClick={() => refetch()}
-              >
-                <IconRefresh
-                  size={20}
-                  stroke={2.5}
-                />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+          <Text fw='bold' w={rem(data?.hasUpdates ? 160 : 190)} truncate='end' title={data?.name}>
+            {data?.name}
+          </Text>
         </Group>
 
         <Group>
@@ -156,7 +170,7 @@ export default function Card({
         </Group>
 
         <Group>
-          <Tooltip withArrow label='Creation date'>
+          <Tooltip withArrow label='Status'>
             <IconCalendar
               color='gray'
               size={16}
@@ -164,13 +178,16 @@ export default function Card({
             />
           </Tooltip>
           <Text fz='h6' w={rem(250)} truncate='end'>
-            {data?.createdAt.toLocaleString()}
+            {data?.uptime}
           </Text>
         </Group>
       </Stack>
 
       <LoadingOverlay
-        visible={!!isFetchingParents || isFetching}
+        visible={!!isFetchingParents || isFetching || isMutating}
+        overlayProps={{
+          blur: 1,
+        }}
       />
     </MantineCard>
   )

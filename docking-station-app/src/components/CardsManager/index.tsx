@@ -9,7 +9,7 @@ import EmptyCard from './EmptyCard'
 
 export default function CardsManager() {
   const filters = useAppSettingsStore(state => state.filters)
-  const { data = [], isLoading } = useListComposeStacks({ refetchOnWindowFocus: false })
+  const { data = [], isFetching } = useListComposeStacks({ refetchOnWindowFocus: false })
   const services = (
     data
       .flatMap(stack => stack.services)
@@ -25,7 +25,7 @@ export default function CardsManager() {
 
   return (
     <div>
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
         {
           services.map(({ stackName, serviceName }) => (
             <Card
@@ -40,9 +40,9 @@ export default function CardsManager() {
         }
 
         {
-          (isLoading || !services?.length) &&
+          !services?.length &&
           <EmptyCard
-            loading={isLoading}
+            loading={isFetching}
             className={classes.item}
             miw={rem(300)}
             mih={rem(150)}
