@@ -1,25 +1,41 @@
 'use client'
 
 import { useListComposeStacks } from '@/hooks/stacks'
-import { useAppSettingsStore } from '@/store/zustand'
+import { useFiltersStore } from '@/store'
 import { SimpleGrid, rem } from '@mantine/core'
 import Card from './Card'
 import classes from './CardManager.module.css'
 import EmptyCard from './EmptyCard'
 
+function escapeRegExp(text: string) {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
+}
+
 export default function CardsManager() {
-  const filters = useAppSettingsStore(state => state.filters)
-  const { data = [], isFetching } = useListComposeStacks({ refetchOnWindowFocus: false })
+  const { updatesOnly, searchValue } = useFiltersStore(state => ({
+    updatesOnly: state.updatesOnly,
+    searchValue: state.searchValue,
+  }))
+  const { data = [], isFetching } = useListComposeStacks()
   const services = (
     data
       .flatMap(stack => stack.services)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .filter(service => {
-        if (filters.updatesOnly) {
-          return service.hasUpdates
+        let flag = true
+
+        if (updatesOnly) {
+          flag &&= service.hasUpdates
         }
 
-        return true
+        if (searchValue) {
+          flag &&= [
+            service.stackName?.match(new RegExp(escapeRegExp(searchValue), 'i')),
+            service.name.match(new RegExp(escapeRegExp(searchValue), 'i')),
+          ].some(Boolean)
+        }
+
+        return flag
       })
   )
 

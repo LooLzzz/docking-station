@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from pydantic import computed_field, field_serializer
 
-from ..consts import DOCKINGSTATION_LABEL__IGNORE
+from ..consts import DOCKINGSTATION_LABEL__IGNORE, POSSIBLE_HOMEPAGE_LABELS
 from .common import AliasedBaseModel
 from .images import DockerImage
 
@@ -48,6 +48,19 @@ class DockerContainer(AliasedBaseModel):
     @property
     def dockingstation_ignore(self):
         return self.labels.get(DOCKINGSTATION_LABEL__IGNORE, False)
+
+    @computed_field
+    @property
+    def homepage_url(self) -> str:
+        for label in POSSIBLE_HOMEPAGE_LABELS:
+            if url := self.labels.get(label, None):
+                return url
+
+        if self.image.image_name.startswith('ghcr.io'):
+            image_name = self.image.image_name.removeprefix('ghcr.io/')
+            return f'http://github.com/{image_name}'
+
+        return f'http://hub.docker.com/r/{self.image.image_name}'
 
     @computed_field
     @property

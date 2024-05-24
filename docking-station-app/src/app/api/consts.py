@@ -9,6 +9,7 @@ __all__ = [
     'IGNORED_COMPOSE_PROJECT_KEYWORDS',
     'IGNORED_COMPOSE_PROJECT_PATTERN',
     'NODE_ENV',
+    'POSSIBLE_HOMEPAGE_LABELS',
     'SERVER_PORT',
     'WEB_PORT',
 ]
@@ -19,6 +20,12 @@ WEB_PORT = int(getenv('WEB_PORT', 3000))
 SERVER_PORT = int(getenv('SERVER_PORT', 3001))
 
 DOCKINGSTATION_LABEL__IGNORE = 'com.loolzzz.docking-station.ignore'
+POSSIBLE_HOMEPAGE_LABELS = getenv(
+    'POSSIBLE_HOMEPAGE_LABELS',
+    ('org.label-schema.url,'
+     'org.opencontainers.image.url,'
+     'org.opencontainers.image.source')
+).split(',')  ## order matters!
 
 AUTO_UPDATER_INTERVAL_SEC = int(getenv('AUTO_UPDATER_INTERVAL_SEC', 60))
 AUTO_UPDATER_MAX_CONCURRENT = int(getenv('AUTO_UPDATER_MAX_CONCURRENT', 5))

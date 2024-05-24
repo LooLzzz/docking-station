@@ -40,6 +40,8 @@ export const useGetComposeService = <TData extends DockerContainer>(stackName: s
       return parsedData
     },
     {
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
       ...options,
     }
   )
@@ -63,7 +65,9 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQu
       return stacks
     },
     {
-      ...options
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
+      ...options,
     }
   )
 }
@@ -84,7 +88,9 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
       return stack
     },
     {
-      ...options
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
+      ...options,
     }
   )
 }

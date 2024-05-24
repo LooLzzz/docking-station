@@ -18,6 +18,7 @@ export interface DockerContainerResponse {
   createdAt: string
   uptime: string
   hasUpdates: boolean
+  homepageUrl?: string
   image: DockerImageResponse
   labels: { [key: string]: string }
   name: string

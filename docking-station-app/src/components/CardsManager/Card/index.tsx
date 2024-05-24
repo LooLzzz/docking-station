@@ -1,9 +1,8 @@
 'use client'
 
-import { useGetComposeService, useUpdateComposeStackService } from '@/hooks/stacks'
+import { useGetComposeService, useListComposeStacks, useUpdateComposeStackService } from '@/hooks/stacks'
 import {
   ActionIcon,
-  ColorSwatch,
   Group,
   LoadingOverlay,
   Card as MantineCard,
@@ -23,7 +22,6 @@ import {
   IconRefresh,
   IconTag
 } from '@tabler/icons-react'
-import { useQueryClient } from 'react-query'
 
 interface CardProps {
   stackName: string
@@ -31,11 +29,6 @@ interface CardProps {
   miw?: string
   mih?: string
   className?: string
-  colors?: {
-    red: string
-    orange: string
-    green: string
-  }
 }
 
 export default function Card({
@@ -44,19 +37,12 @@ export default function Card({
   className,
   stackName,
   serviceName,
-  colors = {
-    red: '#c60000',
-    orange: '#df8c36',
-    green: '#1cc95a',
-  },
 }: CardProps) {
-  const client = useQueryClient()
-  const isFetchingParents = client.isFetching(['stacks'])
-  const { data, isFetching, refetch } = useGetComposeService(stackName, serviceName, {
-    refetchOnWindowFocus: false,
+  const { isRefetching: isLoadingParents } = useListComposeStacks()
+  const { mutate, isLoading: isMutating } = useUpdateComposeStackService(stackName, serviceName)
+  const { data, refetch, isRefetching, isLoading } = useGetComposeService(stackName, serviceName, {
     enabled: false,  // no auto-fetch
   })
-  const { mutate, isLoading: isMutating } = useUpdateComposeStackService(stackName, serviceName)
 
   return (
     <MantineCard
@@ -125,12 +111,20 @@ export default function Card({
               color='gray'
             />
           </Tooltip>
-          <Text fw='bold' w={rem(data?.hasUpdates ? 160 : 190)} truncate='end' title={data?.name}>
+          <Text
+            component='a'
+            title={data?.name}
+            href={data?.homepageUrl}
+            target='_blank'
+            truncate='end'
+            fw='bold'
+            maw={rem(data?.hasUpdates ? 160 : 190)}
+          >
             {data?.name}
           </Text>
         </Group>
 
-        <Group>
+        <Group wrap='nowrap'>
           <Tooltip withArrow label='Stack name'>
             <IconPencil
               color='gray'
@@ -143,7 +137,7 @@ export default function Card({
           </Text>
         </Group>
 
-        <Group>
+        <Group wrap='nowrap'>
           <Tooltip withArrow label='Image'>
             <IconDeviceFloppy
               color='gray'
@@ -156,7 +150,7 @@ export default function Card({
           </Text>
         </Group>
 
-        <Group>
+        <Group wrap='nowrap'>
           <Tooltip withArrow label='Image tag'>
             <IconTag
               color='gray'
@@ -169,7 +163,7 @@ export default function Card({
           </Text>
         </Group>
 
-        <Group>
+        <Group wrap='nowrap'>
           <Tooltip withArrow label='Status'>
             <IconCalendar
               color='gray'
@@ -184,7 +178,7 @@ export default function Card({
       </Stack>
 
       <LoadingOverlay
-        visible={!!isFetchingParents || isFetching || isMutating}
+        visible={isLoadingParents || isMutating || isRefetching || isLoading}
         overlayProps={{
           blur: 1,
         }}

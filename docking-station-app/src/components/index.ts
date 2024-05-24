@@ -1,11 +1,11 @@
-import AppSettings from './AppSettings'
 import AppShell from './AppShell'
 import CardsManager from './CardsManager'
 import EditableText from './EditableText'
+import SearchBar from './SearchBar'
 
 export {
-  AppSettings,
   AppShell,
   CardsManager,
-  EditableText
+  EditableText,
+  SearchBar
 }
