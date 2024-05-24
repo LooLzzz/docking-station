@@ -1,0 +1,12 @@
+
+server:
+  ignore_compose_stack_name_keywords:
+    - devcontainer
+  possible_homepage_labels:
+    - org.label-schema.url
+    - org.opencontainers.image.url
+    - org.opencontainers.image.source
+
+auto_updater:
+  interval: 1d
+  max_concurrent: 4

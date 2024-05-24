@@ -4,16 +4,16 @@ from logging.config import dictConfig
 
 import aiohttp
 
-from .config import LogConfigAutoUpdater
-from .consts import (AUTO_UPDATER_INTERVAL_SEC, AUTO_UPDATER_MAX_CONCURRENT,
-                     SERVER_PORT)
 from .schemas import (DockerContainer, DockerStackResponse,
                       DockerStackUpdateRequest, DockerStackUpdateResponse)
+from .settings import AppSettings, AutoUpdaterLogSettings
 
-BASE_API_URL = f'http://localhost:{SERVER_PORT}/api'
-LOCK = asyncio.Semaphore(AUTO_UPDATER_MAX_CONCURRENT)
+app_settings = AppSettings()
 
-dictConfig(LogConfigAutoUpdater().model_dump())
+BASE_API_URL = f'http://localhost:{app_settings.server_port}/api'
+LOCK = asyncio.Semaphore(app_settings.auto_updater.max_concurrent)
+
+dictConfig(AutoUpdaterLogSettings().model_dump())
 logger = getLogger('auto-updater')
 
 
@@ -51,8 +51,11 @@ async def update_service(service: DockerContainer):
 
 
 async def main():
-    loop = asyncio.get_event_loop()
+    if not app_settings.auto_updater.enabled:
+        logger.info('Auto updater is disabled')
+        return
 
+    loop = asyncio.get_event_loop()
     while True:
         start_t = loop.time()
         tasks: list[asyncio.Task] = []
@@ -81,8 +84,8 @@ async def main():
         if services_to_update:
             logger.info(f'Finished updating {len(tasks)} services in {delta_t:.2f} seconds')
 
-        logger.info(f'Sleeping for {AUTO_UPDATER_INTERVAL_SEC:.2f} seconds')
-        await asyncio.sleep(AUTO_UPDATER_INTERVAL_SEC)
+        logger.info(f'Sleeping for {app_settings.auto_updater.interval_seconds:.2f} seconds')
+        await asyncio.sleep(app_settings.auto_updater.interval_seconds)
 
 
 if __name__ == '__main__':

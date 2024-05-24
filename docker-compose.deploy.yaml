@@ -1,0 +1,7 @@
+
+services:
+  docking-station-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    image: loolzzz/docking-station

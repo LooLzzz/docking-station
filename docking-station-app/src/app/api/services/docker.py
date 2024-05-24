@@ -10,11 +10,11 @@ from python_on_whales.components.container.cli_wrapper import \
     DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
-from ..consts import (DOCKINGSTATION_LABEL__IGNORE,
-                      IGNORED_COMPOSE_PROJECT_PATTERN)
 from ..schemas import DockerContainer, DockerImage, DockerStack
+from ..settings import AppSettings
 from .regctl import get_image_remote_digest
 
+app_settings = AppSettings()
 logger = getLogger(__name__)
 
 __all__ = [
@@ -53,7 +53,7 @@ async def list_containers(filters: DockerContainerListFilters = None):
     containers = await asyncio.gather(*[
         _task(item)
         for item in _containers
-        if not item.config.labels.get(DOCKINGSTATION_LABEL__IGNORE, False)
+        if not item.config.labels.get(app_settings.server.ignore_label_field_name, False)
     ])
 
     return sorted(
@@ -132,7 +132,7 @@ async def list_compose_stacks(filters: DockerContainerListFilters = None):
     stacks = await asyncio.gather(*[
         _task(DockerStack.model_validate(stack.model_dump()))
         for stack in _stacks
-        if not IGNORED_COMPOSE_PROJECT_PATTERN.search(stack.name)
+        if not app_settings.server.ignore_compose_stack_name_pattern.search(stack.name)
     ])
 
     return sorted(

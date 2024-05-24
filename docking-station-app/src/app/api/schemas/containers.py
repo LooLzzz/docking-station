@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from pydantic import computed_field, field_serializer
 
-from ..consts import DOCKINGSTATION_LABEL__IGNORE, POSSIBLE_HOMEPAGE_LABELS
+from ..settings import AppSettings
 from .common import AliasedBaseModel
 from .images import DockerImage
 
@@ -11,6 +11,8 @@ __all__ = [
     'DockerContainerPort',
     'DockerContainerResponse',
 ]
+
+app_settings = AppSettings()
 
 
 class DockerContainerPort(AliasedBaseModel):
@@ -50,12 +52,12 @@ class DockerContainer(AliasedBaseModel):
 
     @property
     def dockingstation_ignore(self):
-        return self.labels.get(DOCKINGSTATION_LABEL__IGNORE, False)
+        return self.labels.get(app_settings.server.ignore_label_field_name, False)
 
     @computed_field
     @property
     def homepage_url(self) -> str:
-        for label in POSSIBLE_HOMEPAGE_LABELS:
+        for label in app_settings.server.possible_homepage_labels:
             if url := self.labels.get(label, None):
                 return url
 

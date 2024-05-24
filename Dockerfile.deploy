@@ -1,0 +1,88 @@
+## BUILDER ##
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+
+# install bun
+RUN curl -fsSL https://bun.sh/install | sh
+
+# Install dependencies based on the preferred package manager
+COPY docking-station-app/package.json docking-station-app/package-lock.json ./
+RUN npm install
+
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY docking-station-app .
+
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry during the build.
+# ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN npm run build
+## BUILDER ##
+
+
+## RUNNER ##
+# Production image, copy all the files and run next
+FROM python:3.12-slim AS runner
+WORKDIR /app
+
+RUN mkdir /app/logs /app/config /app/data
+RUN ln -s /app/logs /logs
+RUN ln -s /app/config /config
+RUN ln -s /app/data /data
+
+COPY settings.template.yaml /app/config/settings.yaml
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod 755 /app/entrypoint.sh
+
+# install npm and unzip
+RUN apt-get update \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends npm unzip curl
+
+# install docker
+RUN curl -fsSL https://get.docker.com | bash
+
+# install regctl
+# https://github.com/regclient/regclient
+RUN curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/bin/regctl
+RUN chmod 755 /usr/bin/regctl
+
+# install concurrently package for running multiple commands
+# https://www.npmjs.com/package/concurrently
+RUN npm install -g concurrently next
+
+ENV NODE_ENV production
+ENV WEB_PORT 3000
+ENV SERVER_PORT 3001
+ENV AUTO_UPDATER_ENABLED false
+
+COPY --from=builder /app/public /app/docking-station-app/public
+
+# Install python dependencies
+COPY ./docking-station-app/requirements.txt /app/docking-station-app/requirements.txt
+COPY ./docking-station-app/src/app/api /app/docking-station-app/src/app/api
+RUN python3 -m pip install -r /app/docking-station-app/requirements.txt
+
+# Set the correct permission for prerender cache
+RUN mkdir /app/docking-station-app/.next
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder /app/.next/standalone /app/docking-station-app/
+COPY --from=builder /app/.next/static /app/docking-station-app/.next/static
+
+EXPOSE ${WEB_PORT}
+
+USER root
+
+CMD ["/bin/bash", "/app/entrypoint.sh"]
+## RUNNER ##

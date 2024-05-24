@@ -12,7 +12,7 @@ __all__ = [
 router = APIRouter(tags=['Stacks'])
 
 
-@router.get('/', response_model=list[DockerStackResponse])
+@router.get('', response_model=list[DockerStackResponse])
 async def list_compose_stacks():
     return await docker_services.list_compose_stacks()
 

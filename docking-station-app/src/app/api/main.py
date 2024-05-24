@@ -9,16 +9,15 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from . import routes
-from .config import LogConfigServer
-from .consts import NODE_ENV
+from .settings import AppSettings, ServerLogSettings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    dictConfig(LogConfigServer().model_dump())
+    dictConfig(ServerLogSettings().model_dump())
     yield
 
-
+app_settings = AppSettings()
 app = FastAPI(
     title='Docking Station API',
     lifespan=lifespan,
@@ -53,7 +52,7 @@ async def server_error(request: Request, exc: Exception):
     status_code = 500
     resp = {'message': str(exc)}
 
-    if NODE_ENV == 'development':
+    if app_settings.node_env == 'development':
         resp['traceback'] = traceback.format_exc()
 
     match exc:

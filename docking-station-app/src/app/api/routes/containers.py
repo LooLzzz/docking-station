@@ -10,7 +10,7 @@ __all__ = [
 router = APIRouter(tags=['Containers'])
 
 
-@router.get('/', response_model=list[DockerContainerResponse])
+@router.get('', response_model=list[DockerContainerResponse])
 async def list_containers():
     return await docker_services.list_containers()
 

@@ -5,7 +5,10 @@ services:
       context: ".."
       dockerfile: .devcontainer/Dockerfile
     container_name: vsc-docking-station
-    env_file: .env
+    environment:
+      - WEB_PORT=3000
+      - SERVER_PORT=3001
+      # - AUTO_UPDATER_ENABLED=false
     volumes:
       - docking-station-config:/config
       - vsc-docking-station-vscode-server:/root/.vscode-server
@@ -19,8 +22,6 @@ services:
       - homepage.name=vsc-docking-station
       - homepage.icon=code
       - homepage.href=http://localhost:3000
-    command: sleep infinity
-    # entrypoint: "/workspaces/docking-station/entrypoint.sh"
 
 volumes:
   vsc-docking-station-vscode-server:

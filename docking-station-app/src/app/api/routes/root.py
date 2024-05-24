@@ -15,7 +15,7 @@ router.include_router(images_router, prefix='/images')
 router.include_router(stacks_router, prefix='/stacks')
 
 
-@router.get('/',
+@router.get('',
             include_in_schema=False,
             status_code=status.HTTP_418_IM_A_TEAPOT)
 async def read_root():
