@@ -21,7 +21,7 @@ class DockerContainerPort(AliasedBaseModel):
 class DockerContainer(AliasedBaseModel):
     id: str
     created_at: datetime
-    uptime: timedelta
+    uptime: str | timedelta
     image: DockerImage
     labels: dict[str, str]
     name: str
@@ -29,7 +29,10 @@ class DockerContainer(AliasedBaseModel):
     status: str
 
     @field_serializer('uptime')
-    def serialize_uptime(self, value: timedelta):
+    def serialize_uptime(self, value: str | timedelta):
+        if isinstance(value, str):
+            return value
+
         if value.days:
             plural = 's' if value.days > 1 else ''
             return f'Up {value.days} day{plural}'

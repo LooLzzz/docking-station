@@ -1,17 +1,24 @@
 import asyncio
+from logging import getLogger
+from logging.config import dictConfig
 
 import aiohttp
-from consts import (AUTO_UPDATER_INTERVAL_SEC, AUTO_UPDATER_MAX_CONCURRENT,
-                    SERVER_PORT)
-from schemas import (DockerContainer, DockerStackResponse,
-                     DockerStackUpdateRequest, DockerStackUpdateResponse)
+
+from .config import LogConfigAutoUpdater
+from .consts import (AUTO_UPDATER_INTERVAL_SEC, AUTO_UPDATER_MAX_CONCURRENT,
+                     SERVER_PORT)
+from .schemas import (DockerContainer, DockerStackResponse,
+                      DockerStackUpdateRequest, DockerStackUpdateResponse)
 
 BASE_API_URL = f'http://localhost:{SERVER_PORT}/api'
 LOCK = asyncio.Semaphore(AUTO_UPDATER_MAX_CONCURRENT)
 
+dictConfig(LogConfigAutoUpdater().model_dump())
+logger = getLogger('auto-updater')
+
 
 async def list_docker_stacks():
-    print('Listing docker stacks', flush=True)
+    logger.info('Listing docker stacks')
     res: list[DockerStackResponse] = []
 
     API_URL = f'{BASE_API_URL}/stacks'
@@ -21,13 +28,13 @@ async def list_docker_stacks():
             res = [DockerStackResponse(**item)
                    for item in data]
 
-    print(f'Found {len(res)} stacks', flush=True)
+    logger.info(f'Found {len(res)} stacks')
     return res
 
 
 async def update_service(service: DockerContainer):
     async with LOCK:
-        print('Updating service:', service.service_name, flush=True)
+        logger.info('Updating service:', service.service_name)
 
         API_URL = f'{BASE_API_URL}/stacks/{service.stack_name}/{service.service_name}'
         request = DockerStackUpdateRequest(infer_envfile=True,
@@ -38,8 +45,9 @@ async def update_service(service: DockerContainer):
         async with aiohttp.ClientSession() as session:
             async with session.post(API_URL, json=body) as resp:
                 data: dict = await resp.json()
-                return [DockerStackUpdateResponse(**item)
-                        for item in data]
+                resp = DockerStackUpdateResponse.model_validate(data)
+                logger.info(f'Updated service response: {service.model_dump(by_alias=True)}')
+                return resp
 
 
 async def main():
@@ -57,9 +65,9 @@ async def main():
                     services_to_update.append(service)
 
         if services_to_update:
-            print(f'Found {len(services_to_update)} services to update', flush=True)
+            logger.info(f'Found {len(services_to_update)} services to update')
         else:
-            print('No services to update', flush=True)
+            logger.info('No services to update')
 
         async with asyncio.TaskGroup() as tg:
             for service in services_to_update:
@@ -71,9 +79,9 @@ async def main():
 
         delta_t = loop.time() - start_t
         if services_to_update:
-            print(f'Finished updating {len(tasks)} services in {delta_t:.2f} seconds', flush=True)
+            logger.info(f'Finished updating {len(tasks)} services in {delta_t:.2f} seconds')
 
-        print(f'Sleeping for {AUTO_UPDATER_INTERVAL_SEC:.2f} seconds', flush=True)
+        logger.info(f'Sleeping for {AUTO_UPDATER_INTERVAL_SEC:.2f} seconds')
         await asyncio.sleep(AUTO_UPDATER_INTERVAL_SEC)
 
 

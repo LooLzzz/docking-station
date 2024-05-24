@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from logging import getLogger
 
 from fastapi import HTTPException
 from python_on_whales import DockerClient, docker
@@ -9,10 +10,12 @@ from python_on_whales.components.container.cli_wrapper import \
     DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
-from ..consts import (IGNORED_COMPOSE_PROJECT_PATTERN,
-                      DOCKINGSTATION_LABEL__IGNORE)
+from ..consts import (DOCKINGSTATION_LABEL__IGNORE,
+                      IGNORED_COMPOSE_PROJECT_PATTERN)
 from ..schemas import DockerContainer, DockerImage, DockerStack
 from .regctl import get_image_remote_digest
+
+logger = getLogger(__name__)
 
 __all__ = [
     'get_compose_service_container',
@@ -183,10 +186,12 @@ async def update_compose_stack(stack_name: str,
     )
 
     if restart_containers:
-        output.append('$ docker compose up')
+        logger.info('Pulling images and restarting containers for %s%s',
+                    stack_name, f'/{service_name}' if service_name else '')
+        output.append('$ docker compose up -d --pull=always')
         output.extend([
-            value.decode().strip()
-            for (_std_type, value)
+            line.decode().strip()
+            for (_std_type, line)
             in client.compose.up(
                 services=service_name,
                 pull='always',
@@ -195,10 +200,11 @@ async def update_compose_stack(stack_name: str,
             )
         ])
     else:
-        output.append('> docker compose pull')
+        logger.info('Pulling images for %s%s', stack_name, f'/{service_name}' if service_name else '')
+        output.append('$ docker compose pull')
         output.extend([
-            std_output.decode().strip()
-            for (_std_type, std_output)
+            line.decode().strip()
+            for (_std_type, line)
             in client.compose.pull(
                 services=service_name,
                 stream_logs=True,
@@ -206,19 +212,22 @@ async def update_compose_stack(stack_name: str,
         ])
 
     if prune_images:
+        logger.info('Pruning images')
         output.extend(['', '$ docker image prune'])
         output.extend(
             client.image.prune().split('\n')
         )
 
+    logger.info('Update complete, output: %s', output)
+
     # success = is container running
-    container_status = next(
-        bool(container.state.running)
+    container_status = all(
+        container.state.running
         for container in docker.container.list(
             filters={'label': f'com.docker.compose.project={stack_name}'},
             all=True,
         )
-        if container.config.labels.get('com.docker.compose.service') == service_name
+        if not service_name or container.config.labels.get('com.docker.compose.service') == service_name
     )
 
     return {

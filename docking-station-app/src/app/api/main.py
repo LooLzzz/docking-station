@@ -1,4 +1,6 @@
 import traceback
+from contextlib import asynccontextmanager
+from logging.config import dictConfig
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import ValidationException
@@ -7,9 +9,20 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 from . import routes
+from .config import LogConfigServer
 from .consts import NODE_ENV
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    dictConfig(LogConfigServer().model_dump())
+    yield
+
+
+app = FastAPI(
+    title='Docking Station API',
+    lifespan=lifespan,
+)
 app.include_router(routes.root_router, prefix='/api')
 app.add_middleware(
     CORSMiddleware,

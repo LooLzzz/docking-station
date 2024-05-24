@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "fastapi-dev": "fastapi dev src/app/api/main.py --reload --port ${SERVER_PORT:-3001}",
+    "fastapi-dev": "cd ./src/app && fastapi dev api/main.py --reload --port ${SERVER_PORT:-3001}",
     "next-dev": "next dev -p ${WEB_PORT:-3000}",
     "dev": "concurrently --names=WEB,SERVER --prefix-colors=auto \"bun run next-dev\" \"bun run fastapi-dev\"",
     "build": "next build",

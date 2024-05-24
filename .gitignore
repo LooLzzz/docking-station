@@ -1,4 +1,5 @@
 .vscode/
 .env
+/app
 
 !.devcontainer/.env

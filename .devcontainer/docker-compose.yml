@@ -7,9 +7,11 @@ services:
     container_name: vsc-docking-station
     env_file: .env
     volumes:
+      - docking-station-config:/config
       - vsc-docking-station-vscode-server:/root/.vscode-server
       - ..:/workspaces/docking-station:cached
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
       - /mnt/big-vault/appdata/compose:/mnt/big-vault/appdata/compose
     labels:
       # for homepage dashboard widget. More info: https://gethomepage.dev/latest/configs/docker/#automatic-service-discovery
@@ -22,3 +24,4 @@ services:
 
 volumes:
   vsc-docking-station-vscode-server:
+  docking-station-config:
