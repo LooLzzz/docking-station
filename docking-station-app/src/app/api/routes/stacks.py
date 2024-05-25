@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
+from fastapi_cache import FastAPICache
 from fastapi_cache.decorator import cache
 
 from ..schemas import (DockerContainerResponse, DockerStackResponse,
@@ -56,13 +57,16 @@ async def get_compose_service_container(stack: str, service: str):
 async def update_compose_stack(stack: str,
                                request: DockerStackUpdateRequest = None):
     request = request or DockerStackUpdateRequest()
-    return await docker_services.update_compose_stack(
+    resp = await docker_services.update_compose_stack(
         stack_name=stack,
         service_name=None,
         infer_envfile=request.infer_envfile,
         restart_containers=request.restart_containers,
         prune_images=request.prune_images,
     )
+    await FastAPICache.get_backend().clear('api.routes.stacks.list_compose_stacks()')
+    await FastAPICache.get_backend().clear(f'api.routes.stacks.get_compose_stack(stack={stack!r})')
+    return resp
 
 
 @router.post('/{stack}/{service}', response_model=DockerStackUpdateResponse)
@@ -70,10 +74,14 @@ async def update_compose_stack_service(stack: str,
                                        service: str,
                                        request: DockerStackUpdateRequest = None):
     request = request or DockerStackUpdateRequest()
-    return await docker_services.update_compose_stack(
+    resp = await docker_services.update_compose_stack(
         stack_name=stack,
         service_name=service,
         infer_envfile=request.infer_envfile,
         restart_containers=request.restart_containers,
         prune_images=request.prune_images,
     )
+    await FastAPICache.get_backend().clear('api.routes.stacks.list_compose_stacks()')
+    await FastAPICache.get_backend().clear(f'api.routes.stacks.get_compose_stack(stack={stack!r})')
+    await FastAPICache.get_backend().clear(f'api.routes.stacks.get_compose_service_container(stack={stack!r},service={service!r})')
+    return resp

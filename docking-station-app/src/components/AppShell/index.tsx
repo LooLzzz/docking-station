@@ -1,5 +1,8 @@
 'use client'
 
+import DockingStationSolidGray from '@/public/dockingstation-solid-gray.png'
+import DockingStationSolidWhite from '@/public/dockingstation-solid-white.png'
+
 import { SearchBar } from '@/components'
 import { useListComposeStacks } from '@/hooks/stacks'
 import {
@@ -9,7 +12,6 @@ import {
   Container,
   Group,
   Switch,
-  Title,
   Tooltip,
   rem,
   useMantineColorScheme,
@@ -58,10 +60,10 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
           <Group h='100%' justify='space-between' wrap='nowrap'>
             {/* TODO: get an original icon */}
             <Image
-              src='/logo.png'
+              src={colorScheme === 'dark' ? DockingStationSolidWhite : DockingStationSolidGray}
               alt='Docker Logo'
-              width={65}
-              height={65}
+              width={75}
+              height={75}
             />
 
             <Center flex={1}>

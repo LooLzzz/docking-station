@@ -12,12 +12,16 @@ from pydantic import ValidationError
 
 from . import routes
 from .settings import AppSettings, ServerLogSettings
+from .settings.common import cache_key_builder
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     dictConfig(ServerLogSettings().model_dump())
-    FastAPICache.init(InMemoryBackend(), prefix='fastapi-cache')
+    FastAPICache.init(
+        backend=InMemoryBackend(),
+        key_builder=cache_key_builder,
+    )
     yield
 
 app_settings = AppSettings()
