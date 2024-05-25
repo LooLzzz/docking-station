@@ -2,12 +2,14 @@ from pathlib import Path
 
 from pydantic import Field, computed_field
 
-from .common import AliasedBaseModel, CamelCaseAliasedBaseModel
+from .common import (AliasedBaseModel, CamelCaseAliasedBaseModel,
+                     IterableRootModel)
 from .containers import DockerContainer
 
 __all__ = [
     'DockerStack',
     'DockerStackResponse',
+    'DockerStackRootModel',
     'DockerStackUpdateRequest',
     'DockerStackUpdateResponse',
 ]
@@ -31,6 +33,10 @@ class DockerStack(AliasedBaseModel):
             item.image.has_updates
             for item in self.services
         )
+
+
+class DockerStackRootModel(IterableRootModel):
+    root: list[DockerStack]
 
 
 class DockerStackUpdateRequest(CamelCaseAliasedBaseModel):

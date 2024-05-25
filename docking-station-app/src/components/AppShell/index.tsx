@@ -41,8 +41,11 @@ const MoonIcon = () => {
 }
 
 export default function BasicAppShell({ children }: { children: React.ReactNode }) {
-  const { refetch } = useListComposeStacks({ refetchOnWindowFocus: false })
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
+  const { refetch } = useListComposeStacks({
+    enabled: false,  // no auto-fetch
+    meta: { noCache: true },
+  })
 
   return (
     <AppShell

@@ -6,6 +6,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import ValidationException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
 from pydantic import ValidationError
 
 from . import routes
@@ -15,6 +17,7 @@ from .settings import AppSettings, ServerLogSettings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     dictConfig(ServerLogSettings().model_dump())
+    FastAPICache.init(InMemoryBackend(), prefix='fastapi-cache')
     yield
 
 app_settings = AppSettings()

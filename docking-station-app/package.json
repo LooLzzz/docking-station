@@ -23,6 +23,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-query": "^3.39.3",
+    "sharp": "^0.33.4",
     "zustand": "^4.5.0"
   },
   "devDependencies": {

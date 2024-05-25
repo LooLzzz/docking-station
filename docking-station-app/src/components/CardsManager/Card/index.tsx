@@ -40,6 +40,7 @@ export default function Card({
   const { mutate, isLoading: isMutating } = useUpdateComposeStackService(stackName, serviceName)
   const { data, refetch, isRefetching, isLoading } = useGetComposeService(stackName, serviceName, {
     enabled: false,  // no auto-fetch
+    meta: { noCache: true },
   })
 
   return (
@@ -65,7 +66,7 @@ export default function Card({
         >
           {
             data?.hasUpdates
-              ? <IconExclamationCircle color='#f6bc2c' />
+              ? <IconExclamationCircle color='#4fb2ff' />
               : <IconCheck color='#1ed760' />
           }
         </Tooltip>

@@ -1,3 +1,5 @@
+from typing import TypeVar
+
 from pydantic import (AliasChoices, AliasGenerator, BaseModel, ConfigDict,
                       RootModel)
 from pydantic.alias_generators import to_camel, to_pascal
@@ -7,6 +9,7 @@ __all__ = [
     'CamelCaseAliasedBaseModel',
     'IterableRootModel',
 ]
+T = TypeVar('T')
 
 
 class AliasedBaseModel(BaseModel):
@@ -33,6 +36,11 @@ class CamelCaseAliasedBaseModel(BaseModel):
 
 
 class IterableRootModel(RootModel):
+    root: list[T]
+
+    def __len__(self):
+        return len(self.root)
+
     def __iter__(self):
         return iter(self.root)
 

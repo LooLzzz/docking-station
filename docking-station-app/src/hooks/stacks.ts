@@ -18,8 +18,14 @@ export const useGetComposeService = <TData extends DockerContainer>(stackName: s
 
   return useQuery<TData>(
     ['stacks', stackName, serviceName],
-    async () => {
-      const { data } = await axios.get<DockerContainerResponse>(apiRoutes.getComposeService(stackName, serviceName))
+    async ({ meta }) => {
+      const noCache = meta?.noCache ?? false
+      const { data } = await axios.get<DockerContainerResponse>(
+        apiRoutes.getComposeService(stackName, serviceName),
+        {
+          headers: noCache ? { 'Cache-Control': 'no-cache' } : undefined,
+        },
+      )
       const parsedData = parseDockerContainerDates(data) as TData
 
       client.setQueryData<DockerStack[]>(['stacks'], input => (
@@ -52,8 +58,14 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQu
 
   return useQuery<TData>(
     ['stacks'],
-    async () => {
-      const { data } = await axios.get<DockerStackResponse[]>(apiRoutes.listComposeStacks)
+    async ({ meta }) => {
+      const noCache = meta?.noCache ?? false
+      const { data } = await axios.get<DockerStackResponse[]>(
+        apiRoutes.listComposeStacks,
+        {
+          headers: noCache ? { 'Cache-Control': 'no-cache' } : undefined,
+        },
+      )
       const stacks = data.map(parseDockerStackDates) as TData
 
       stacks.forEach(stack => {
@@ -77,8 +89,14 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
 
   return useQuery<TData>(
     ['stacks', stackName],
-    async () => {
-      const { data } = await axios.get<DockerStackResponse>(apiRoutes.getComposeStack(stackName))
+    async ({ meta }) => {
+      const noCache = meta?.noCache ?? false
+      const { data } = await axios.get<DockerStackResponse>(
+        apiRoutes.getComposeStack(stackName),
+        {
+          headers: noCache ? { 'Cache-Control': 'no-cache' } : undefined,
+        }
+      )
       const stack = parseDockerStackDates(data) as TData
 
       stack.services.forEach(service => {
