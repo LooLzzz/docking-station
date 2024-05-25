@@ -8,5 +8,6 @@ server:
     - org.opencontainers.image.source
 
 auto_updater:
+  enabled: false
   interval: 1d
   max_concurrent: 4
