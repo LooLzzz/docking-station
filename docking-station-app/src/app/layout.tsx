@@ -5,6 +5,7 @@ import { ColorSchemeScript, MantineProvider, createTheme } from '@mantine/core'
 import '@mantine/core/styles.css'
 import { ModalsProvider } from '@mantine/modals'
 import { Notifications } from '@mantine/notifications'
+import '@mantine/notifications/styles.css'
 import { Inter } from 'next/font/google'
 import { QueryClient, QueryClientProvider } from 'react-query'
 
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             theme={theme}
             defaultColorScheme='dark'
           >
-            <Notifications />
+            <Notifications
+              position='bottom-left'
+            />
             <ModalsProvider>
               <AppShell>
                 {children}
