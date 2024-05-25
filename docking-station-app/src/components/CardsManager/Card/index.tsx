@@ -1,5 +1,3 @@
-'use client'
-
 import { useGetComposeService, useListComposeStacks, useUpdateComposeStackService } from '@/hooks/stacks'
 import {
   ActionIcon,

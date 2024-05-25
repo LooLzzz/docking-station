@@ -28,6 +28,7 @@
       "@/store": ["store"],
       "@/store/*": ["store/*"],
       "@/types": ["types.d.ts"],
+      "@/utils": ["utils.ts"],
     },
     "baseUrl": "./src"
   },

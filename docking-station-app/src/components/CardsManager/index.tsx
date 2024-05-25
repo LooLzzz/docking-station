@@ -2,14 +2,12 @@
 
 import { useListComposeStacks } from '@/hooks/stacks'
 import { useFiltersStore } from '@/store'
+import { escapeRegExp } from '@/utils'
 import { SimpleGrid, rem } from '@mantine/core'
+import { useMemo } from 'react'
 import Card from './Card'
 import classes from './CardManager.module.css'
 import EmptyCard from './EmptyCard'
-
-function escapeRegExp(text: string) {
-  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
-}
 
 export default function CardsManager() {
   const { updatesOnly, searchValue } = useFiltersStore(state => ({
@@ -17,27 +15,30 @@ export default function CardsManager() {
     searchValue: state.searchValue,
   }))
   const { data = [], isFetching } = useListComposeStacks()
-  const services = (
-    data
-      .flatMap(stack => stack.services)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .filter(service => {
-        let flag = true
 
-        if (updatesOnly) {
-          flag &&= service.hasUpdates
-        }
+  const services = useMemo(() => data
+    .flatMap(stack => stack.services)
+    .sort((a, b) => (
+      a.hasUpdates === b.hasUpdates
+        ? b.createdAt.getTime() - a.createdAt.getTime()
+        : Number(b.hasUpdates) - Number(a.hasUpdates)
+    ))
+    .filter(service => {
+      let flag = true
 
-        if (searchValue) {
-          flag &&= [
-            service.stackName?.match(new RegExp(escapeRegExp(searchValue), 'i')),
-            service.name.match(new RegExp(escapeRegExp(searchValue), 'i')),
-          ].some(Boolean)
-        }
+      if (updatesOnly) {
+        flag &&= service.hasUpdates
+      }
 
-        return flag
-      })
-  )
+      if (searchValue) {
+        flag &&= [
+          service.stackName?.match(new RegExp(escapeRegExp(searchValue), 'i')),
+          service.name.match(new RegExp(escapeRegExp(searchValue), 'i')),
+        ].some(Boolean)
+      }
+
+      return flag
+    }), [data, updatesOnly, searchValue])
 
   return (
     <div>

@@ -1,5 +1,3 @@
-'use client'
-
 import { useFiltersStore } from '@/store'
 import { Group, Card as MantineCard, Stack, Switch } from '@mantine/core'
 
