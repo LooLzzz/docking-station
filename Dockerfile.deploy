@@ -31,13 +31,13 @@ RUN npm run build
 
 ## RUNNER ##
 # Production image, copy all the files and run next
-FROM python:3.12-alpine AS runner
+FROM python:3.12-slim AS runner
 WORKDIR /app
 
 # install npm and unzip
-RUN apt update \
+RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
-    && apt -y install --no-install-recommends npm unzip curl
+    && apt-get -y install --no-install-recommends npm unzip curl
 
 # install docker
 RUN curl -fsSL https://get.docker.com | bash
