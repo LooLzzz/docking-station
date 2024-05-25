@@ -35,9 +35,9 @@ FROM python:3.12-alpine AS runner
 WORKDIR /app
 
 # install npm and unzip
-RUN apt-get update \
+RUN apt update \
     && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends npm unzip curl
+    && apt -y install --no-install-recommends npm unzip curl
 
 # install docker
 RUN curl -fsSL https://get.docker.com | bash
