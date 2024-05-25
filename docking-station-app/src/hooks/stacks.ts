@@ -18,8 +18,9 @@ export const useGetComposeService = <TData extends DockerContainer>(stackName: s
 
   return useQuery<TData>(
     ['stacks', stackName, serviceName],
-    async ({ meta }) => {
-      const noCache = meta?.noCache ?? false
+    async ({ queryKey, meta }) => {
+      const isInvalidated = client.getQueryState(queryKey)?.isInvalidated
+      const noCache = meta?.noCache || isInvalidated
       const { data } = await axios.get<DockerContainerResponse>(
         apiRoutes.getComposeService(stackName, serviceName),
         {
@@ -58,8 +59,9 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQu
 
   return useQuery<TData>(
     ['stacks'],
-    async ({ meta }) => {
-      const noCache = meta?.noCache ?? false
+    async ({ queryKey, meta }) => {
+      const isInvalidated = client.getQueryState(queryKey)?.isInvalidated
+      const noCache = meta?.noCache || isInvalidated
       const { data } = await axios.get<DockerStackResponse[]>(
         apiRoutes.listComposeStacks,
         {
@@ -89,8 +91,9 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
 
   return useQuery<TData>(
     ['stacks', stackName],
-    async ({ meta }) => {
-      const noCache = meta?.noCache ?? false
+    async ({ queryKey, meta }) => {
+      const isInvalidated = client.getQueryState(queryKey)?.isInvalidated
+      const noCache = meta?.noCache || isInvalidated
       const { data } = await axios.get<DockerStackResponse>(
         apiRoutes.getComposeStack(stackName),
         {
@@ -139,8 +142,11 @@ export const useUpdateComposeStackService = (
 
       {
         mutationKey: ['stacks', stackName, serviceName],
-        onSuccess: () => {
-          queryClient.invalidateQueries(['stacks', stackName, serviceName])
+        onSuccess: async () => {
+          // force a no-cache refetch
+          await queryClient.invalidateQueries(['stacks', stackName, serviceName])
+          await queryClient.refetchQueries(['stacks', stackName, serviceName])
+
           notifications.show({
             title: 'Service updated',
             message: 'The service has been updated successfully',

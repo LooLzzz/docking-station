@@ -31,17 +31,8 @@ RUN npm run build
 
 ## RUNNER ##
 # Production image, copy all the files and run next
-FROM python:3.12-slim AS runner
+FROM python:3.12-alpine AS runner
 WORKDIR /app
-
-RUN mkdir /app/logs /app/config /app/data
-RUN ln -s /app/logs /logs
-RUN ln -s /app/config /config
-RUN ln -s /app/data /data
-
-COPY settings.template.yaml /app/config/settings.yaml
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod 755 /app/entrypoint.sh
 
 # install npm and unzip
 RUN apt-get update \
@@ -67,13 +58,21 @@ ENV AUTO_UPDATER_ENABLED false
 
 COPY --from=builder /app/public /app/docking-station-app/public
 
+RUN mkdir /app/docking-station-app/.next
+
+RUN mkdir /app/logs /app/config /app/data
+RUN ln -snf /app/logs /logs
+RUN ln -snf /app/config /config
+RUN ln -snf /app/data /data
+
+COPY settings.template.yaml /app/config/settings.yaml
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod 755 /app/entrypoint.sh
+
 # Install python dependencies
 COPY ./docking-station-app/requirements.txt /app/docking-station-app/requirements.txt
 COPY ./docking-station-app/src/app/api /app/docking-station-app/src/app/api
 RUN python3 -m pip install -r /app/docking-station-app/requirements.txt
-
-# Set the correct permission for prerender cache
-RUN mkdir /app/docking-station-app/.next
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
