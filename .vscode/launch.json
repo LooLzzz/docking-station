@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: FastAPI",
+      "type": "debugpy",
+      "request": "launch",
+      "justMyCode": true,
+      "module": "uvicorn",
+      "cwd": "${workspaceFolder}/docking-station-app/src/app",
+      "args": [
+        "api.main:app",
+        "--reload",
+        "--port=3001",
+      ]
+    },
+    {
+      "name": "Python: auto_updater.py",
+      "type": "debugpy",
+      "request": "launch",
+      "justMyCode": true,
+      "cwd": "${workspaceFolder}/docking-station-app/src/app",
+      "module": "api.auto_updater",
+    },
+    {
+      "name": "Next.js: Fullstack",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun run dev",
+      "cwd": "${workspaceFolder}/docking-station-app",
+    },
+    {
+      "name": "Next.js: Frontend",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun run next-dev",
+      "cwd": "${workspaceFolder}/docking-station-app",
+      "serverReadyAction": {
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+  ]
+}
