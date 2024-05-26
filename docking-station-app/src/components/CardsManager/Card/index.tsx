@@ -1,6 +1,9 @@
+'use client'
+
 import { useGetComposeService, useListComposeStacks, useUpdateComposeStackService } from '@/hooks/stacks'
 import {
   ActionIcon,
+  Center,
   Group,
   LoadingOverlay,
   Card as MantineCard,
@@ -9,6 +12,7 @@ import {
   Tooltip,
   rem
 } from '@mantine/core'
+import { useInterval } from '@mantine/hooks'
 import {
   IconCalendar,
   IconCheck,
@@ -20,6 +24,7 @@ import {
   IconRefresh,
   IconTag
 } from '@tabler/icons-react'
+import { useEffect, useState } from 'react'
 
 interface CardProps {
   stackName: string
@@ -36,12 +41,29 @@ export default function Card({
   stackName,
   serviceName,
 }: CardProps) {
-  const { isRefetching: isLoadingParents } = useListComposeStacks()
+  const { isRefetching: isLoadingParents } = useListComposeStacks({
+    enabled: false, // no auto-fetch
+  })
   const { mutate, isLoading: isMutating } = useUpdateComposeStackService(stackName, serviceName)
   const { data, refetch, isRefetching, isLoading } = useGetComposeService(stackName, serviceName, {
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
   })
+  const loadingOverlayVisible = isLoadingParents || isMutating || isRefetching || isLoading
+
+  const [seconds, setSeconds] = useState(0)
+  const interval = useInterval(() => setSeconds(s => s + 0.1), 100)
+
+  useEffect(() => {
+    loadingOverlayVisible
+      ? interval.start()
+      : interval.stop()
+  }, [loadingOverlayVisible, interval.start, interval.stop])
+
+  useEffect(() => {
+    !interval.active
+      && setSeconds(0)
+  }, [interval?.active, setSeconds])
 
   return (
     <MantineCard
@@ -176,10 +198,17 @@ export default function Card({
         </Group>
       </Stack>
 
-      <LoadingOverlay
-        visible={isLoadingParents || isMutating || isRefetching || isLoading}
+      <LoadingOverlay pb={10}
+        visible={loadingOverlayVisible}
         overlayProps={{
           blur: 1,
+          children: (
+            <Center h='100%' w='100%' pt={65}>
+              {
+                `${seconds.toFixed(1)}s`
+              }
+            </Center>
+          ),
         }}
       />
     </MantineCard>

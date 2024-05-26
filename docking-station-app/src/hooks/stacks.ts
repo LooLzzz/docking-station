@@ -60,8 +60,8 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQu
   return useQuery<TData>(
     ['stacks'],
     async ({ queryKey, meta }) => {
-      const isInvalidated = client.getQueryState(queryKey)?.isInvalidated
-      const noCache = meta?.noCache || isInvalidated
+      const selfQueryState = client.getQueryState(queryKey)
+      const noCache = selfQueryState?.data && (meta?.noCache || selfQueryState?.isInvalidated)
       const { data } = await axios.get<DockerStackResponse[]>(
         apiRoutes.listComposeStacks,
         {
