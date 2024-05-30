@@ -25,7 +25,7 @@ router.include_router(stacks_router, prefix='/stacks')
             include_in_schema=False,
             status_code=status.HTTP_418_IM_A_TEAPOT)
 async def root():
-    return {'message': 'This is not the API you are looking for'}
+    return {'message': 'This is not the endpoint you are looking for'}
 
 
 @router.get('/stats', tags=['Stats'], response_model=GetStatsResponse)

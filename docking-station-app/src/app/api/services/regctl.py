@@ -2,6 +2,8 @@ import asyncio
 import subprocess
 from logging import getLogger
 
+from fastapi_cache.decorator import cache
+
 logger = getLogger(__name__)
 
 __all__ = [
@@ -9,6 +11,7 @@ __all__ = [
 ]
 
 
+@cache(expire=5)
 async def get_image_remote_digest(repo_tag: str, reraise: bool = False) -> str:
     try:
         if ':' in repo_tag:

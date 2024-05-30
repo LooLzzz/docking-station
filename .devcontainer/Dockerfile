@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/vscode/devcontainers/python:3.12
 
 RUN mkdir /app /app/logs /app/config /app/data
-COPY settings.template.yaml /app/config/settings.yaml
+COPY settings.template.yml /app/config/settings.yml
 
 # install npm and unzip
 RUN apt-get update \

@@ -59,7 +59,7 @@ class ServerSettings(BaseSettings):
 
 
 class AppSettings(BaseSettings):
-    model_config = SettingsConfigDict(yaml_file='/app/config/settings.yaml')
+    model_config = SettingsConfigDict(yaml_file='/app/config/settings.yml')
 
     auto_updater: AutoUpdaterSettings = Field(default_factory=AutoUpdaterSettings)
     server: ServerSettings = Field(default_factory=ServerSettings)

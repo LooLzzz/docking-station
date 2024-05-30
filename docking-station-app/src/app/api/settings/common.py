@@ -28,13 +28,17 @@ def cache_key_builder(func: Callable,
                       kwargs: dict = None):
     args = args or ()
     kwargs = kwargs or {}
+    kwargs_items = sorted(kwargs.items(), key=lambda x: x[0])
     args_values = [
         *[f'{a!r}' for a in args],
-        *[f'{k}={v!r}' for k, v in kwargs.items()],
+        *[f'{k}={v!r}' for k, v in kwargs_items],
     ]
-    args_str = ','.join(args_values)
+    args_str = ', '.join(args_values)
 
-    return f'{func.__module__}.{func.__name__}({args_str})'
+    base_key = f'{func.__module__}.{func.__name__}({args_str})'
+    if namespace:
+        return f'{namespace}.{base_key}'
+    return base_key
 
 
 Interval = Annotated[timedelta, BeforeValidator(_validate_interval)]

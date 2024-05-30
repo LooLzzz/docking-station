@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi_cache import FastAPICache
@@ -7,6 +9,7 @@ from ..schemas import (DockerContainerResponse, DockerStackResponse,
                        DockerStackUpdateRequest, DockerStackUpdateResponse)
 from ..services import docker as docker_services
 from ..settings import AppSettings
+from ..settings.common import cache_key_builder
 
 app_settings = AppSettings()
 __all__ = [
@@ -81,7 +84,12 @@ async def update_compose_stack_service(stack: str,
         restart_containers=request.restart_containers,
         prune_images=request.prune_images,
     )
-    await FastAPICache.get_backend().clear('api.routes.stacks.list_compose_stacks()')
-    await FastAPICache.get_backend().clear(f'api.routes.stacks.get_compose_stack(stack={stack!r})')
-    await FastAPICache.get_backend().clear(f'api.routes.stacks.get_compose_service_container(stack={stack!r},service={service!r})')
+
+    cache_backend = FastAPICache.get_backend()
+    await asyncio.gather(*[
+        cache_backend.clear(k)
+        for k in [cache_key_builder(list_compose_stacks),
+                  cache_key_builder(get_compose_stack, kwargs={'stack': stack}),
+                  cache_key_builder(get_compose_service_container, kwargs={'stack': stack, 'service': service})]
+    ])
     return resp

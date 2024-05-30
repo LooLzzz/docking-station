@@ -1,0 +1,10 @@
+.dockerignore
+.git
+.github
+.next
+.venv
+docker-compose.deploy.yaml
+Dockerfile.deploy
+node_modules
+npm-debug.log
+README.md

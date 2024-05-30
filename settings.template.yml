@@ -2,7 +2,7 @@
 server:
   ignore_compose_stack_name_keywords:
     - devcontainer
-  possible_homepage_labels:
+  possible_homepage_labels:  # order matters!
     - org.label-schema.url
     - org.opencontainers.image.url
     - org.opencontainers.image.source
@@ -10,4 +10,4 @@ server:
 auto_updater:
   enabled: false
   interval: 1d
-  max_concurrent: 4
+  max_concurrent: 1
