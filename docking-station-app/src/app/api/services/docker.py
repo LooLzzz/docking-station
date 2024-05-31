@@ -4,15 +4,13 @@ from logging import getLogger
 
 from fastapi import HTTPException
 from python_on_whales import DockerClient, docker
-from python_on_whales.components.container.cli_wrapper import \
-    Container as WhalesContainer
-from python_on_whales.components.container.cli_wrapper import \
-    DockerContainerListFilters
+from python_on_whales.components.container.cli_wrapper import Container as WhalesContainer
+from python_on_whales.components.container.cli_wrapper import DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
 from ..schemas import DockerContainer, DockerImage, DockerStack
 from ..settings import AppSettings
-from .regctl import get_image_remote_digest
+from .regctl import get_image_inspect, get_image_remote_digest
 
 app_settings = AppSettings()
 logger = getLogger(__name__)
@@ -78,21 +76,20 @@ async def list_images(repository_or_tag: str = None,
     async def _task(image: WhalesImage):
         repo_local_digest = image.repo_digests[0] if image.repo_digests else None
         repo_tag = image.repo_tags[0] if image.repo_tags else None
-        repo_remote_digest = None
-        has_updates = False
+        latest_update = image.created
+        image_inspect = None
 
         if repo_local_digest:
             if not repo_tag:
                 repo_tag = repo_local_digest.split('@', 1)[0]
-            if repo_remote_digest := await get_image_remote_digest(repo_tag):
-                has_updates = repo_local_digest != repo_remote_digest
+            if image_inspect := await get_image_inspect(repo_tag):
+                latest_update = image_inspect.created
 
         return DockerImage(
             id=image.id,
             created_at=image.created,
-            has_updates=has_updates,
+            latest_update=latest_update,
             repo_local_digest=repo_local_digest,
-            repo_remote_digest=repo_remote_digest,
             repo_tag=repo_tag,
         )
 

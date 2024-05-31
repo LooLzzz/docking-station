@@ -27,5 +27,6 @@ export function parseDockerImageDates(image: DockerImageResponse): DockerImage {
   return {
     ...image,
     createdAt: new Date(image.createdAt),
+    latestUpdate: new Date(image.latestUpdate),
   }
 }

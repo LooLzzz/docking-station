@@ -5,12 +5,13 @@ export interface DockerImageResponse {
   hasUpdates: boolean
   imageName: string
   imageTag: string
+  latestUpdate: string
   repoLocalDigest: string
-  repoRemoteDigest: string
 }
 
 export interface DockerImage extends DockerImageResponse {
   createdAt: Date
+  latestUpdate: Date
 }
 
 export interface DockerContainerResponse {

@@ -13,10 +13,14 @@ __all__ = [
 class DockerImage(AliasedBaseModel):
     id: str
     created_at: datetime
-    has_updates: bool
+    latest_update: datetime
     repo_local_digest: str | None
-    repo_remote_digest: str | None
     repo_tag: str
+
+    @computed_field
+    @property
+    def has_updates(self) -> bool:
+        return self.latest_update != self.created_at
 
     @computed_field
     @property

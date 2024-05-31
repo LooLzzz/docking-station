@@ -14,10 +14,9 @@ import {
 } from '@mantine/core'
 import { useInterval } from '@mantine/hooks'
 import {
-  IconCalendar,
+  IconCalendarDown,
   IconCheck,
   IconCloudDownload,
-  IconDeviceFloppy,
   IconExclamationCircle,
   IconInfoCircle,
   IconPencil,
@@ -84,7 +83,14 @@ export default function Card({
       >
         <Tooltip
           withArrow
-          label={data?.hasUpdates ? 'Updates available' : 'Up to date'}
+          label={
+            data?.hasUpdates
+              ? <>
+                <Center>Updates available</Center>
+                <Center>{`Released ${data?.image?.latestUpdate?.toLocaleDateString()}`}</Center>
+              </>
+              : 'Up to date'
+          }
         >
           {
             data?.hasUpdates
@@ -160,32 +166,19 @@ export default function Card({
 
         <Group wrap='nowrap'>
           <Tooltip withArrow label='Image'>
-            <IconDeviceFloppy
-              color='gray'
-              size={16}
-              stroke={2.5}
-            />
-          </Tooltip>
-          <Text fz='h6' w={rem(250)} truncate='end' title={data?.image.imageName}>
-            {data?.image.imageName}
-          </Text>
-        </Group>
-
-        <Group wrap='nowrap'>
-          <Tooltip withArrow label='Image tag'>
             <IconTag
               color='gray'
               size={16}
               stroke={2.5}
             />
           </Tooltip>
-          <Text fz='h6' w={rem(250)} truncate='end' title={data?.image.imageTag}>
-            {data?.image.imageTag}
+          <Text fz='h6' w={rem(250)} truncate='end' title={`${data?.image.imageName}:${data?.image.imageTag}`}>
+            {`${data?.image.imageName}:${data?.image.imageTag}`}
           </Text>
         </Group>
 
-        <Group wrap='nowrap'>
-          <Tooltip withArrow label='Status'>
+        {/* <Group wrap='nowrap'>
+          <Tooltip withArrow label='Uptime'>
             <IconCalendar
               color='gray'
               size={16}
@@ -195,7 +188,21 @@ export default function Card({
           <Text fz='h6' w={rem(250)} truncate='end'>
             {data?.uptime}
           </Text>
+        </Group> */}
+
+        <Group wrap='nowrap'>
+          <Tooltip withArrow label='Local image date'>
+            <IconCalendarDown
+              color='gray'
+              size={16}
+              stroke={2.5}
+            />
+          </Tooltip>
+          <Text fz='h6' w={rem(250)} truncate='end'>
+            {data?.image?.createdAt?.toLocaleDateString()}
+          </Text>
         </Group>
+
       </Stack>
 
       <LoadingOverlay pb={10}

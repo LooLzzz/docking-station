@@ -6,6 +6,9 @@ server:
     - org.label-schema.url
     - org.opencontainers.image.url
     - org.opencontainers.image.source
+  possible_image_version_labels:  # order matters!
+    - org.label-schema.version
+    - org.opencontainers.image.version
 
 auto_updater:
   enabled: false

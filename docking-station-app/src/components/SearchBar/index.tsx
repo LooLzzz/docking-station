@@ -14,8 +14,10 @@ export default function SearchBar() {
   const [searchValueDebounced, setSearchValueDebounced] = useDebouncedState(searchValue, 150)
 
   const ComputedIconFilter = useMemo(() => (
-    updatesOnly ? IconFilterFilled : IconFilter
-  ), [updatesOnly])
+    (searchValue || updatesOnly)
+      ? IconFilterFilled
+      : IconFilter
+  ), [searchValue, updatesOnly])
 
   const windowKeydownHandler = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -25,7 +27,7 @@ export default function SearchBar() {
       textInputRef.current?.focus()
       event.preventDefault()
     }
-  }, [])
+  }, [textInputRef?.current])
 
   useEffect(() => {
     setSearchValue(searchValueDebounced)
@@ -39,7 +41,7 @@ export default function SearchBar() {
         ref={textInputRef}
         radius='xl'
         size='md'
-        defaultValue={searchValue!}
+        defaultValue={searchValue}
         placeholder='Search containers'
         rightSectionWidth={42}
         maw={rem(600)}

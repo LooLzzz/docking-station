@@ -28,11 +28,13 @@ class ServerSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix='SERVER_')
 
     cache_control_max_age: Interval = '1h'
+    ignore_compose_stack_name_keywords: list[str] = Field(default_factory=lambda: ['devcontainer'])
     ignore_label_field_name: str = 'com.loolzzz.docking-station.ignore'
-    ignore_compose_stack_name_keywords: tuple[str, ...] = ('devcontainer',)
-    possible_homepage_labels: tuple[str, ...] = ('org.label-schema.url',
-                                                 'org.opencontainers.image.url',
-                                                 'org.opencontainers.image.source')
+    possible_homepage_labels: list[str] = Field(default_factory=lambda: ['org.label-schema.url',
+                                                                         'org.opencontainers.image.url',
+                                                                         'org.opencontainers.image.source'])
+    possible_image_version_labels: list[str] = Field(default_factory=lambda: ['org.label-schema.version',
+                                                                              'org.opencontainers.image.version'])
 
     @property
     def cache_control_max_age_seconds(self):
