@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from pydantic import Field, computed_field
+from pydantic import computed_field
 
+from ..settings import AppSettings
 from .common import AliasedBaseModel
 
 __all__ = [
@@ -9,13 +10,17 @@ __all__ = [
     'DockerImageResponse',
 ]
 
+app_settings = AppSettings()
+
 
 class DockerImage(AliasedBaseModel):
     id: str
     created_at: datetime
     latest_update: datetime
+    latest_version: str | None = None
     repo_local_digest: str | None
     repo_tag: str
+    version: str | None = None
 
     @computed_field
     @property

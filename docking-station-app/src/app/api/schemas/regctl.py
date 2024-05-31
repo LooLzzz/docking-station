@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import PurePath
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from .common import AliasedBaseModel
 
@@ -26,6 +26,20 @@ class RegctlImageConfig(AliasedBaseModel):
     labels: dict[str, str] = Field(default_factory=dict)
     volumes: dict[str, dict] = Field(default_factory=dict)
     working_dir: PurePath | None = None
+
+    @field_validator('entrypoint', 'env', mode='before')
+    @classmethod
+    def validate_list(cls, v):
+        if v is None:
+            return []
+        return v
+
+    @field_validator('exposed_ports', 'labels', 'volumes', mode='before')
+    @classmethod
+    def validate_dict(cls, v):
+        if v is None:
+            return {}
+        return v
 
 
 class RegctlImageInspect(AliasedBaseModel):

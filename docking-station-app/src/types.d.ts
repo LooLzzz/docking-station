@@ -6,7 +6,9 @@ export interface DockerImageResponse {
   imageName: string
   imageTag: string
   latestUpdate: string
+  latestVersion?: string
   repoLocalDigest: string
+  version?: string 
 }
 
 export interface DockerImage extends DockerImageResponse {

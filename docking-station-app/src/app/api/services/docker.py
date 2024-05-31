@@ -77,20 +77,34 @@ async def list_images(repository_or_tag: str = None,
         repo_local_digest = image.repo_digests[0] if image.repo_digests else None
         repo_tag = image.repo_tags[0] if image.repo_tags else None
         latest_update = image.created
+        image_lables = image.config.labels
         image_inspect = None
+        version = None
+        latest_version = None
+
+        if image_lables:
+            for label in app_settings.server.possible_image_version_labels:
+                if v := image_lables.get(label, None):
+                    version = v
 
         if repo_local_digest:
             if not repo_tag:
                 repo_tag = repo_local_digest.split('@', 1)[0]
             if image_inspect := await get_image_inspect(repo_tag):
                 latest_update = image_inspect.created
+                for label in app_settings.server.possible_image_version_labels:
+                    if v := image_inspect.config.labels.get(label, None):
+                        latest_version = v
+                        break
 
         return DockerImage(
             id=image.id,
             created_at=image.created,
             latest_update=latest_update,
+            latest_version=latest_version,
             repo_local_digest=repo_local_digest,
             repo_tag=repo_tag,
+            version=version,
         )
 
     _images = docker.image.list(

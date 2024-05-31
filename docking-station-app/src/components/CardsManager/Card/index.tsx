@@ -21,7 +21,8 @@ import {
   IconInfoCircle,
   IconPencil,
   IconRefresh,
-  IconTag
+  IconTag,
+  IconVersions,
 } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 
@@ -87,6 +88,7 @@ export default function Card({
             data?.hasUpdates
               ? <>
                 <Center>Updates available</Center>
+                {data?.image?.latestVersion ? <Center>{`Version ${data?.image?.latestVersion}`}</Center> : null}
                 <Center>{`Released ${data?.image?.latestUpdate?.toLocaleDateString()}`}</Center>
               </>
               : 'Up to date'
@@ -176,6 +178,22 @@ export default function Card({
             {`${data?.image.imageName}:${data?.image.imageTag}`}
           </Text>
         </Group>
+
+        {
+          data?.image.version &&
+          <Group wrap='nowrap'>
+            <Tooltip withArrow label='Version'>
+              <IconVersions
+                color='gray'
+                size={16}
+                stroke={2.5}
+              />
+            </Tooltip>
+            <Text fz='h6' w={rem(250)} truncate='end'>
+              {data?.image.version}
+            </Text>
+          </Group>
+        }
 
         {/* <Group wrap='nowrap'>
           <Tooltip withArrow label='Uptime'>
