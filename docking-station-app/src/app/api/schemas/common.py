@@ -9,6 +9,7 @@ __all__ = [
     'CamelCaseAliasedBaseModel',
     'IterableRootModel',
 ]
+
 T = TypeVar('T')
 
 

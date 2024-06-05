@@ -10,7 +10,6 @@ services:
       - SERVER_PORT=3001
       # - AUTO_UPDATER_ENABLED=false
     volumes:
-      - docking-station-config:/config
       - vsc-docking-station-vscode-server:/root/.vscode-server
       - ..:/workspaces/docking-station:cached
       - /var/run/docker.sock:/var/run/docker.sock
@@ -25,4 +24,3 @@ services:
 
 volumes:
   vsc-docking-station-vscode-server:
-  docking-station-config:

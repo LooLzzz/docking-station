@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import (BaseSettings, PydanticBaseSettingsSource,
                                SettingsConfigDict, YamlConfigSettingsSource)
 
-from .common import Interval
+from ..types import Interval
 
 __all__ = [
     'AppSettings',
@@ -27,7 +27,7 @@ class AutoUpdaterSettings(BaseSettings):
 class ServerSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix='SERVER_')
 
-    cache_control_max_age: Interval = '1h'
+    cache_control_max_age: Interval = '1d'
     ignore_compose_stack_name_keywords: list[str] = Field(default_factory=lambda: ['devcontainer'])
     ignore_label_field_name: str = 'com.loolzzz.docking-station.ignore'
     possible_homepage_labels: list[str] = Field(default_factory=lambda: ['org.label-schema.url',

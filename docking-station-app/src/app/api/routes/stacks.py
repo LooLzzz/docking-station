@@ -1,15 +1,13 @@
 import asyncio
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.exceptions import HTTPException
 from fastapi_cache import FastAPICache
-from fastapi_cache.decorator import cache
 
 from ..schemas import (DockerContainerResponse, DockerStackResponse,
                        DockerStackUpdateRequest, DockerStackUpdateResponse)
 from ..services import docker as docker_services
-from ..settings import AppSettings
-from ..settings.common import cache_key_builder
+from ..settings import AppSettings, cache_key_builder, cached
 
 app_settings = AppSettings()
 __all__ = [
@@ -20,17 +18,28 @@ router = APIRouter(tags=['Stacks'])
 
 
 @router.get('', response_model=list[DockerStackResponse])
-@cache(expire=app_settings.server.cache_control_max_age_seconds)
-async def list_compose_stacks():
-    return await docker_services.list_compose_stacks()
+@cached(expire=app_settings.server.cache_control_max_age_seconds)
+async def list_compose_stacks(request: Request):
+    no_cache = (
+        request.query_params.get('no_cache', False)
+        or request.headers.get('Cache-Control', '').lower() == 'no-cache'
+    )
+
+    return await docker_services.list_compose_stacks(no_cache=no_cache)
 
 
 @router.get('/{stack}', response_model=DockerStackResponse)
-@cache(expire=app_settings.server.cache_control_max_age_seconds)
-async def get_compose_stack(stack: str):
+@cached(expire=app_settings.server.cache_control_max_age_seconds)
+async def get_compose_stack(request: Request, stack: str):
+    no_cache = (
+        request.query_params.get('no_cache', False)
+        or request.headers.get('Cache-Control', '').lower() == 'no-cache'
+    )
+
     try:
         return await docker_services.get_compose_stack(
             stack_name=stack,
+            no_cache=no_cache,
         )
 
     except KeyError as exc:
@@ -41,12 +50,18 @@ async def get_compose_stack(stack: str):
 
 
 @router.get('/{stack}/{service}', response_model=DockerContainerResponse)
-@cache(expire=app_settings.server.cache_control_max_age_seconds)
-async def get_compose_service_container(stack: str, service: str):
+@cached(expire=app_settings.server.cache_control_max_age_seconds)
+async def get_compose_service_container(request: Request, stack: str, service: str):
+    no_cache = (
+        request.query_params.get('no_cache', False)
+        or request.headers.get('Cache-Control', '').lower() == 'no-cache'
+    )
+
     try:
         return await docker_services.get_compose_service_container(
             stack_name=stack,
             service_name=service,
+            no_cache=no_cache,
         )
 
     except KeyError as exc:

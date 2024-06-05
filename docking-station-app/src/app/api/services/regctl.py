@@ -1,11 +1,12 @@
 import asyncio
 import subprocess
+from datetime import timedelta
 from logging import getLogger
 
-from fastapi_cache.decorator import cache
-
 from ..schemas import RegctlImageInspect
+from ..settings import AppSettings, cached
 
+app_settings = AppSettings()
 logger = getLogger(__name__)
 
 __all__ = [
@@ -14,61 +15,85 @@ __all__ = [
 ]
 
 
-@cache(expire=5)
-async def get_image_remote_digest(repo_tag: str, reraise: bool = False):
-    try:
-        if ':' in repo_tag:
-            image_name, _tag = repo_tag.split(':', 1)
-        else:
-            image_name, _tag = repo_tag, ''
+async def get_image_remote_digest(repo_tag: str, reraise: bool = False, no_cache: bool = False):
+    cache_control_max_age_seconds = (timedelta(days=365).total_seconds()
+                                     if 'sha256:' in repo_tag
+                                     else app_settings.server.cache_control_max_age_seconds)
 
-        cmd = f'regctl image digest "{repo_tag}"'
-        process = await asyncio.create_subprocess_shell(
-            cmd=cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        logger.debug('regctl image digest request: %s', repo_tag)
-        stdout, stderr = await process.communicate()
+    @cached(expire=cache_control_max_age_seconds)
+    async def _get_image_remote_digest(repo_tag: str, no_cache: bool = False):
+        nonlocal reraise
 
-        if process.returncode != 0:
-            error_message = stderr.decode().strip()
-            raise Exception(f'Error running regctl command: {error_message}')
+        try:
+            if ':' in repo_tag:
+                image_name, _tag = repo_tag.split(':', 1)
+            else:
+                image_name, _tag = repo_tag, ''
 
-        digest = stdout.decode().strip()
-        res = f'{image_name}@{digest}'
-        logger.info('regctl image digest response: %s', res)
-        return res
+            cmd = f'regctl image digest "{repo_tag}"'
+            process = await asyncio.create_subprocess_shell(
+                cmd=cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            logger.debug('regctl image digest request: %s', repo_tag)
+            stdout, stderr = await process.communicate()
 
-    except Exception as e:
-        logger.error('Error running regctl command: %s', e)
-        if reraise:
-            raise Exception(f'Error running regctl command: {e}')
-        return None
+            if process.returncode != 0:
+                error_message = stderr.decode().strip()
+                raise Exception(f'Error running regctl command: {error_message}')
+
+            digest = stdout.decode().strip()
+            res = f'{image_name}@{digest}'
+            logger.info('regctl image digest response: %s', res)
+            return res
+
+        except Exception as e:
+            logger.error('Error running regctl command: %s', e)
+            if reraise:
+                raise Exception(f'Error running regctl command: {e}')
+            return None
+
+    return await _get_image_remote_digest(
+        repo_tag=repo_tag,
+        no_cache=no_cache,
+    )
 
 
-@cache(expire=5)
-async def get_image_inspect(repo_tag: str, reraise: bool = False):
-    try:
-        cmd = f'regctl image inspect "{repo_tag}"'
-        process = await asyncio.create_subprocess_shell(
-            cmd=cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        logger.debug('regctl image inspect request: %s', repo_tag)
-        stdout, stderr = await process.communicate()
+async def get_image_inspect(repo_tag: str, reraise: bool = False, no_cache: bool = False):
+    cache_control_max_age_seconds = (timedelta(days=365).total_seconds()
+                                     if 'sha256:' in repo_tag
+                                     else app_settings.server.cache_control_max_age_seconds)
 
-        if process.returncode != 0:
-            error_message = stderr.decode().strip()
-            raise Exception(f'Error running regctl command: {error_message}')
+    @cached(expire=cache_control_max_age_seconds)
+    async def _get_image_inspect(repo_tag: str, no_cache: bool = False) -> RegctlImageInspect:
+        nonlocal reraise
 
-        res = RegctlImageInspect.model_validate_json(stdout)
-        logger.info('regctl image inspect response: %s', res.created)
-        return res
+        try:
+            cmd = f'regctl image inspect "{repo_tag}"'
+            process = await asyncio.create_subprocess_shell(
+                cmd=cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            logger.debug('regctl image inspect request: %s', repo_tag)
+            stdout, stderr = await process.communicate()
 
-    except Exception as e:
-        logger.error('Error running regctl command: %s', e)
-        if reraise:
-            raise Exception(f'Error running regctl command: {e}')
-        return None
+            if process.returncode != 0:
+                error_message = stderr.decode().strip()
+                raise Exception(f'Error running regctl command: {error_message}')
+
+            res = RegctlImageInspect.model_validate_json(stdout)
+            logger.info('regctl image inspect response: %s', res.created)
+            return res
+
+        except Exception as e:
+            logger.error('Error running regctl command: %s', e)
+            if reraise:
+                raise Exception(f'Error running regctl command: {e}')
+            return None
+
+    return await _get_image_inspect(
+        repo_tag=repo_tag,
+        no_cache=no_cache,
+    )

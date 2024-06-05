@@ -9,7 +9,7 @@
     // "features": {},
 
     // Use 'postCreateCommand' to run commands after the container is created.
-    "postCreateCommand": "cd ./docking-station-app && concurrently --names=LINK,BUN,PIP --prefix-colors=auto \"ln -snf /app ../app\" \"bun install\" \"pip install notebook -r requirements.txt\"",
+    "postCreateCommand": "/bin/bash ./.devcontainer/postCreate.sh",
 
     // Use 'postStartCommand' to run commands after the container is started.
     // "postStartCommand": "",
@@ -30,10 +30,19 @@
                 "ms-python.autopep8",
                 "ms-python.isort",
                 "ms-python.python",
+                "qwtel.sqlite-viewer",
                 "rangav.vscode-thunder-client",
                 "richie5um2.vscode-sort-json",
                 "wmaurer.change-case"
             ]
+        }
+    },
+    "portsAttributes": {
+        "3000": {
+            "label": "frontend"
+        },
+        "3001": {
+            "label": "backend"
         }
     }
 }
