@@ -308,7 +308,7 @@ class SQLiteBackend(Backend):
                     )
                 )
 
-            if query:
+            if query is not None:
                 result = session.exec(query)
                 session.commit()
                 count = result.rowcount
