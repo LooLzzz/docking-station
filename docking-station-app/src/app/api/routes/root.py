@@ -1,6 +1,6 @@
 from itertools import chain
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, status
 
 from .. import routes
 from ..schemas import DockerStack, DockerStackRootModel, GetStatsResponse
@@ -29,8 +29,8 @@ async def root():
 
 
 @router.get('/stats', tags=['Stats'], response_model=GetStatsResponse)
-async def get_stats():
-    _stacks = await routes.stacks.list_compose_stacks()
+async def get_stats(request: Request):
+    _stacks = await routes.stacks.list_compose_stacks(request=request)
     stacks = DockerStackRootModel.model_validate(_stacks)
 
     num_of_services_with_updates = 0
