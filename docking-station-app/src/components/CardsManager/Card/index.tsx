@@ -21,9 +21,9 @@ import {
   IconCheck,
   IconCloudDownload,
   IconExclamationCircle,
-  IconInfoCircle,
-  IconPencil,
+  IconExternalLink,
   IconRefresh,
+  IconStack2,
   IconTag,
   IconVersions,
 } from '@tabler/icons-react'
@@ -92,7 +92,7 @@ export default function Card({
     title: 'Confirm Update Service Action',
     children: (
       <Text size='sm'>
-        Are you sure you want to update <Code fw='bold'>{stackName}/{serviceName}</Code>?
+        Are you sure you want to update <Code fw='bold' style={{ whiteSpace: 'nowrap' }}>{data?.image.imageName ?? '???'}</Code>?
       </Text>
     ),
     labels: { confirm: 'Confirm', cancel: 'Cancel' },
@@ -152,7 +152,15 @@ export default function Card({
 
         {
           data?.hasUpdates &&
-          <Tooltip withArrow label='Update Service'>
+          <Tooltip
+            withArrow
+            label='Update Service'
+            events={{
+              hover: true,
+              focus: false,
+              touch: false,
+            }}
+          >
             <ActionIcon
               color='gray'
               variant='transparent'
@@ -183,7 +191,7 @@ export default function Card({
       <Stack gap={5}>
         <Group wrap='nowrap'>
           <Tooltip withArrow label='Container name'>
-            <IconInfoCircle
+            <IconExternalLink
               size={16}
               stroke={2.5}
               color='gray'
@@ -204,7 +212,7 @@ export default function Card({
 
         <Group wrap='nowrap'>
           <Tooltip withArrow label='Stack name'>
-            <IconPencil
+            <IconStack2
               color='gray'
               size={16}
               stroke={2.5}
