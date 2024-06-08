@@ -4,20 +4,16 @@ from fastapi import APIRouter, Request, status
 
 from .. import routes
 from ..schemas import DockerStack, DockerStackRootModel, GetStatsResponse
-from ..settings import AppSettings
-from .containers import router as containers_router
-from .images import router as images_router
+from ..settings import get_app_settings
 from .stacks import router as stacks_router
 
 __all__ = [
     'router',
 ]
 
-app_settings = AppSettings()
+app_settings = get_app_settings()
 router = APIRouter()
 
-router.include_router(containers_router, prefix='/containers')
-router.include_router(images_router, prefix='/images')
 router.include_router(stacks_router, prefix='/stacks')
 
 
@@ -29,8 +25,8 @@ async def root():
 
 
 @router.get('/stats', tags=['Stats'], response_model=GetStatsResponse)
-async def get_stats(request: Request):
-    _stacks = await routes.stacks.list_compose_stacks(request=request)
+async def get_stats(no_cache: bool = False):
+    _stacks = await routes.stacks.list_compose_stacks(no_cache=no_cache)
     stacks = DockerStackRootModel.model_validate(_stacks)
 
     num_of_services_with_updates = 0

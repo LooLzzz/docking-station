@@ -10,7 +10,7 @@ from fastapi_cache import FastAPICache
 from pydantic import ValidationError
 
 from . import routes
-from .settings import AppSettings, ServerLogSettings, SQLiteBackend, cache_key_builder
+from .settings import ServerLogSettings, SQLiteBackend, cache_key_builder, get_app_settings
 
 
 @asynccontextmanager
@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     )
     yield
 
-app_settings = AppSettings()
+app_settings = get_app_settings()
 app = FastAPI(
     title='Docking Station API',
     lifespan=lifespan,

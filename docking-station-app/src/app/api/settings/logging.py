@@ -1,12 +1,13 @@
 from pydantic_settings import BaseSettings
 
-from .settings import AppSettings
+from .settings import get_app_settings
 
-app_settings = AppSettings()
 __all__ = [
     'AutoUpdaterLogSettings',
     'ServerLogSettings',
 ]
+
+app_settings = get_app_settings()
 
 B = 1024
 MB = B * 1024

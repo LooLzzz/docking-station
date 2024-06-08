@@ -24,7 +24,7 @@ export const useGetComposeService = <TData extends DockerContainer>(stackName: s
       const { data } = await axios.get<DockerContainerResponse>(
         apiRoutes.getComposeService(stackName, serviceName),
         {
-          headers: noCache ? { 'Cache-Control': 'no-cache' } : undefined,
+          params: noCache ? { no_cache: true } : undefined,
         },
       )
       const parsedData = parseDockerContainerDates(data) as TData
@@ -65,7 +65,7 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQu
       const { data } = await axios.get<DockerStackResponse[]>(
         apiRoutes.listComposeStacks,
         {
-          headers: noCache ? { 'Cache-Control': 'no-cache' } : undefined,
+          params: noCache ? { no_cache: true } : undefined,
         },
       )
       const stacks = data.map(parseDockerStackDates) as TData
@@ -97,7 +97,7 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
       const { data } = await axios.get<DockerStackResponse>(
         apiRoutes.getComposeStack(stackName),
         {
-          headers: noCache ? { 'Cache-Control': 'no-cache' } : undefined,
+          params: noCache ? { no_cache: true } : undefined,
         }
       )
       const stack = parseDockerStackDates(data) as TData

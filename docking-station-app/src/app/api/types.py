@@ -8,7 +8,19 @@ from .utils import tryparse_float
 
 __all__ = [
     'Interval',
+    'SingletonMetaclass',
 ]
+
+
+class SingletonMetaclass(type):
+    def __init__(cls, name, bases, dict):
+        super().__init__(name, bases, dict)
+        cls._instance = None
+
+    def __call__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__call__(*args, **kwargs)
+        return cls._instance
 
 
 def _validate_interval(value):

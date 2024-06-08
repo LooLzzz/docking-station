@@ -23,6 +23,7 @@
       "@/components/*": ["components/*"],
       "@/hooks": ["hooks"],
       "@/hooks/*": ["hooks/*"],
+      "@/mantineTheme": ["mantineTheme.ts"],
       "@/public/*": ["../public/*"],
       "@/routes": ["routes.ts"],
       "@/store": ["store"],

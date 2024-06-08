@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import computed_field
 
-from ..settings import AppSettings
+from ..settings import get_app_settings
 from .common import AliasedBaseModel
 
 __all__ = [
@@ -10,7 +10,7 @@ __all__ = [
     'DockerImageResponse',
 ]
 
-app_settings = AppSettings()
+app_settings = get_app_settings()
 
 
 class DockerImage(AliasedBaseModel):

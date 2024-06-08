@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from pydantic import Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator
 
-from .common import (AliasedBaseModel, CamelCaseAliasedBaseModel,
-                     IterableRootModel)
+from .common import AliasedBaseModel, CamelCaseAliasedBaseModel, IterableRootModel
 from .containers import DockerContainer
 
 __all__ = [
@@ -33,6 +32,13 @@ class DockerStack(AliasedBaseModel):
             item.image.has_updates
             for item in self.services
         )
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_from_basemodel(cls, v):
+        if isinstance(v, BaseModel):
+            return v.model_dump()
+        return v
 
 
 class DockerStackRootModel(IterableRootModel):

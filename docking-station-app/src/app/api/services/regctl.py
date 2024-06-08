@@ -4,15 +4,15 @@ from datetime import timedelta
 from logging import getLogger
 
 from ..schemas import RegctlImageInspect
-from ..settings import AppSettings, cached
-
-app_settings = AppSettings()
-logger = getLogger(__name__)
+from ..settings import cached, get_app_settings
 
 __all__ = [
     'get_image_inspect',
     'get_image_remote_digest',
 ]
+
+app_settings = get_app_settings()
+logger = getLogger(__name__)
 
 
 async def get_image_remote_digest(repo_tag: str, reraise: bool = False, no_cache: bool = False):
@@ -61,8 +61,9 @@ async def get_image_remote_digest(repo_tag: str, reraise: bool = False, no_cache
 
 
 async def get_image_inspect(repo_tag: str, reraise: bool = False, no_cache: bool = False):
+    is_specific_digest = 'sha256:' in repo_tag
     cache_control_max_age_seconds = (timedelta(days=365).total_seconds()
-                                     if 'sha256:' in repo_tag
+                                     if is_specific_digest
                                      else app_settings.server.cache_control_max_age_seconds)
 
     @cached(expire=cache_control_max_age_seconds)
@@ -95,5 +96,5 @@ async def get_image_inspect(repo_tag: str, reraise: bool = False, no_cache: bool
 
     return await _get_image_inspect(
         repo_tag=repo_tag,
-        no_cache=no_cache,
+        no_cache=False if is_specific_digest else no_cache,
     )

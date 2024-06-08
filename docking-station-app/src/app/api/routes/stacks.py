@@ -1,39 +1,33 @@
 import asyncio
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi_cache import FastAPICache
 
 from ..schemas import (DockerContainerResponse, DockerStackResponse,
                        DockerStackUpdateRequest, DockerStackUpdateResponse)
 from ..services import docker as docker_services
-from ..settings import AppSettings, cache_key_builder
+from ..settings import cache_key_builder, cached, get_app_settings
 
-app_settings = AppSettings()
 __all__ = [
     'router',
 ]
 
-router = APIRouter(tags=['Stacks'])
+app_settings = get_app_settings()
+router = APIRouter()
 
 
-@router.get('', response_model=list[DockerStackResponse])
-async def list_compose_stacks(request: Request):
-    no_cache = (
-        request.query_params.get('no_cache', False)
-        or request.headers.get('Cache-Control', '').lower() == 'no-cache'
+@router.get('', tags=['[GET] Stacks'], response_model=list[DockerStackResponse])
+@cached(expire=app_settings.server.cache_control_max_age_seconds)
+async def list_compose_stacks(no_cache: bool = False, include_stopped: bool = False):
+    return await docker_services.list_compose_stacks(
+        no_cache=no_cache,
+        include_stopped=include_stopped,
     )
 
-    return await docker_services.list_compose_stacks(no_cache=no_cache)
 
-
-@router.get('/{stack}', response_model=DockerStackResponse)
-async def get_compose_stack(request: Request, stack: str):
-    no_cache = (
-        request.query_params.get('no_cache', False)
-        or request.headers.get('Cache-Control', '').lower() == 'no-cache'
-    )
-
+@router.get('/{stack}', tags=['[GET] Stacks'], response_model=DockerStackResponse)
+async def get_compose_stack(stack: str, no_cache: bool = False):
     try:
         return await docker_services.get_compose_stack(
             stack_name=stack,
@@ -47,13 +41,8 @@ async def get_compose_stack(request: Request, stack: str):
         ) from exc
 
 
-@router.get('/{stack}/{service}', response_model=DockerContainerResponse)
-async def get_compose_service_container(request: Request, stack: str, service: str):
-    no_cache = (
-        request.query_params.get('no_cache', False)
-        or request.headers.get('Cache-Control', '').lower() == 'no-cache'
-    )
-
+@router.get('/{stack}/{service}', tags=['[GET] Stacks'], response_model=DockerContainerResponse)
+async def get_compose_service_container(stack: str, service: str, no_cache: bool = False):
     try:
         return await docker_services.get_compose_service_container(
             stack_name=stack,
@@ -68,40 +57,22 @@ async def get_compose_service_container(request: Request, stack: str, service: s
         ) from exc
 
 
-@router.post('/{stack}', response_model=DockerStackUpdateResponse)
-async def update_compose_stack(stack: str,
-                               request: DockerStackUpdateRequest = None):
-    request = request or DockerStackUpdateRequest()
-    resp = await docker_services.update_compose_stack(
-        stack_name=stack,
-        service_name=None,
-        infer_envfile=request.infer_envfile,
-        restart_containers=request.restart_containers,
-        prune_images=request.prune_images,
-    )
-    await FastAPICache.get_backend().clear('api.routes.stacks.list_compose_stacks()')
-    await FastAPICache.get_backend().clear(f'api.routes.stacks.get_compose_stack(stack={stack!r})')
-    return resp
-
-
-@router.post('/{stack}/{service}', response_model=DockerStackUpdateResponse)
+@router.post('/{stack}/{service}', tags=['[UPDATE] Stacks'], response_model=DockerStackUpdateResponse)
 async def update_compose_stack_service(stack: str,
                                        service: str,
-                                       request: DockerStackUpdateRequest = None):
-    request = request or DockerStackUpdateRequest()
+                                       request_body: DockerStackUpdateRequest = None):
+    # TODO: make this a streaming response
+
+    request_body = request_body or DockerStackUpdateRequest()
     resp = await docker_services.update_compose_stack(
         stack_name=stack,
         service_name=service,
-        infer_envfile=request.infer_envfile,
-        restart_containers=request.restart_containers,
-        prune_images=request.prune_images,
+        infer_envfile=request_body.infer_envfile,
+        restart_containers=request_body.restart_containers,
+        prune_images=request_body.prune_images,
     )
 
     cache_backend = FastAPICache.get_backend()
-    await asyncio.gather(*[
-        cache_backend.clear(k)
-        for k in [cache_key_builder(list_compose_stacks),
-                  cache_key_builder(get_compose_stack, kwargs={'stack': stack}),
-                  cache_key_builder(get_compose_service_container, kwargs={'stack': stack, 'service': service})]
-    ])
+    key, _ = cache_key_builder(list_compose_stacks).split('(', 1)
+    await cache_backend.clear(namespace=key)
     return resp

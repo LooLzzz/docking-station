@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 from typing import Literal, Tuple
 
 from pydantic import Field, field_validator
@@ -9,6 +10,7 @@ from ..types import Interval
 
 __all__ = [
     'AppSettings',
+    'get_app_settings',
 ]
 
 
@@ -86,3 +88,8 @@ class AppSettings(BaseSettings):
             dotenv_settings,
             env_settings,
         )
+
+
+@lru_cache(maxsize=1)
+def get_app_settings():
+    return AppSettings()

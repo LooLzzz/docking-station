@@ -6,15 +6,14 @@ import aiohttp
 
 from .schemas import (DockerContainer, DockerStackResponse,
                       DockerStackUpdateRequest, DockerStackUpdateResponse)
-from .settings import AppSettings, AutoUpdaterLogSettings
+from .settings import AutoUpdaterLogSettings, get_app_settings
 
-app_settings = AppSettings()
+app_settings = get_app_settings()
+dictConfig(AutoUpdaterLogSettings().model_dump())
+logger = getLogger('auto-updater')
 
 BASE_API_URL = f'http://localhost:{app_settings.server_port}/api'
 LOCK = asyncio.Semaphore(app_settings.auto_updater.max_concurrent)
-
-dictConfig(AutoUpdaterLogSettings().model_dump())
-logger = getLogger('auto-updater')
 
 
 async def list_docker_stacks():

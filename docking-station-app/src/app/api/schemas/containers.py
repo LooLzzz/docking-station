@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from pydantic import computed_field, field_serializer
 
-from ..settings import AppSettings
+from ..settings import get_app_settings
 from .common import AliasedBaseModel
 from .images import DockerImage
 
@@ -12,7 +12,7 @@ __all__ = [
     'DockerContainerResponse',
 ]
 
-app_settings = AppSettings()
+app_settings = get_app_settings()
 
 
 class DockerContainerPort(AliasedBaseModel):

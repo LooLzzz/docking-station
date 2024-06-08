@@ -9,11 +9,8 @@ from python_on_whales.components.container.cli_wrapper import DockerContainerLis
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
 from ..schemas import DockerContainer, DockerImage, DockerStack
-from ..settings import AppSettings
+from ..settings import get_app_settings
 from .regctl import get_image_inspect, get_image_remote_digest
-
-app_settings = AppSettings()
-logger = getLogger(__name__)
 
 __all__ = [
     'get_compose_service_container',
@@ -25,13 +22,15 @@ __all__ = [
     'update_compose_stack',
 ]
 
+app_settings = get_app_settings()
+logger = getLogger(__name__)
+
 
 async def list_containers(filters: DockerContainerListFilters = None,
-                          use_regctl: bool = True,
+                          include_stopped: bool = False,
                           no_cache: bool = False):
 
     async def _task(container: WhalesContainer):
-        nonlocal use_regctl
         nonlocal no_cache
 
         image_tag = (container.config.image.split('@', 1)[0]
@@ -39,7 +38,6 @@ async def list_containers(filters: DockerContainerListFilters = None,
                                            .removeprefix('library/'))
         image = await get_image(
             repository_or_tag=image_tag,
-            use_regctl=use_regctl,
             no_cache=no_cache,
         )
 
@@ -55,8 +53,8 @@ async def list_containers(filters: DockerContainerListFilters = None,
         )
 
     _containers = docker.container.list(
+        all=include_stopped,
         filters=filters or {},
-        all=True,
     )
     containers = await asyncio.gather(*[
         _task(item)
@@ -71,22 +69,11 @@ async def list_containers(filters: DockerContainerListFilters = None,
     )
 
 
-async def get_container(container_id: str):
-    containers = await list_containers(
-        filters={'id': container_id}
-    )
-    if not containers:
-        raise KeyError(container_id)
-    return containers[0]
-
-
 async def list_images(repository_or_tag: str = None,
                       filters: dict[str, str] = None,
-                      use_regctl: bool = True,
                       no_cache: bool = False):
 
     async def _task(image: WhalesImage):
-        nonlocal use_regctl
         nonlocal no_cache
 
         repo_local_digest = image.repo_digests[0] if image.repo_digests else None
@@ -107,15 +94,13 @@ async def list_images(repository_or_tag: str = None,
             if not repo_tag:
                 repo_tag = repo_local_digest.split('@', 1)[0]
 
-            if use_regctl:
-                if image_remote_digest := await get_image_remote_digest(repo_tag, no_cache=no_cache):
-                    is_specific_digest = 'sha256:' not in image_remote_digest
-                    image_inspect = await get_image_inspect(image_remote_digest, no_cache=is_specific_digest)
-                    latest_update = image_inspect.created
-                    for label in app_settings.server.possible_image_version_labels:
-                        if v := image_inspect.config.labels.get(label, None):
-                            latest_version = v
-                            break
+            if image_remote_digest := await get_image_remote_digest(repo_tag, no_cache=no_cache):
+                image_inspect = await get_image_inspect(image_remote_digest, no_cache=no_cache)
+                latest_update = image_inspect.created
+                for label in app_settings.server.possible_image_version_labels:
+                    if v := image_inspect.config.labels.get(label, None):
+                        latest_version = v
+                        break
 
         return DockerImage(
             id=image.id,
@@ -130,7 +115,6 @@ async def list_images(repository_or_tag: str = None,
     _images = docker.image.list(
         repository_or_tag=repository_or_tag,
         filters=filters or {},
-        all=True,
     )
     images = await asyncio.gather(*[
         _task(item)
@@ -145,11 +129,9 @@ async def list_images(repository_or_tag: str = None,
 
 
 async def get_image(repository_or_tag: str,
-                    use_regctl: bool = True,
                     no_cache: bool = False):
     images = await list_images(
         repository_or_tag=repository_or_tag,
-        use_regctl=use_regctl,
         no_cache=no_cache,
     )
     if not images:
@@ -158,23 +140,23 @@ async def get_image(repository_or_tag: str,
 
 
 async def list_compose_stacks(filters: DockerContainerListFilters = None,
-                              use_regctl: bool = True,
+                              include_stopped: bool = False,
                               no_cache: bool = False):
 
     async def _task(stack: DockerStack):
-        nonlocal use_regctl
+        nonlocal include_stopped
         nonlocal no_cache
 
         stack.services = await list_containers(
             filters={'label': f'com.docker.compose.project={stack.name}'},
-            use_regctl=use_regctl,
+            include_stopped=include_stopped,
             no_cache=no_cache,
         )
         return stack
 
-    _stacks = docker.compose.ls(all=True, filters=filters or {})
+    _stacks = docker.compose.ls(all=include_stopped, filters=filters or {})
     stacks = await asyncio.gather(*[
-        _task(DockerStack.model_validate(stack.model_dump()))
+        _task(DockerStack.model_validate(stack))
         for stack in _stacks
         if not app_settings.server.ignore_compose_stack_name_pattern.search(stack.name)
     ])
@@ -186,16 +168,34 @@ async def list_compose_stacks(filters: DockerContainerListFilters = None,
 
 
 async def get_compose_stack(stack_name: str,
-                            use_regctl: bool = True,
                             no_cache: bool = False):
     stacks = await list_compose_stacks(
         filters={'name': stack_name},
-        use_regctl=use_regctl,
         no_cache=no_cache,
     )
     if not stacks:
         raise KeyError(stack_name)
     return stacks[0]
+
+
+async def get_compose_service_container(stack_name: str,
+                                        service_name: str,
+                                        no_cache: bool = False):
+    stack = await get_compose_stack(stack_name)
+    container = next(
+        (item
+         for item in stack.services
+         if item.service_name == service_name),
+        None
+    )
+    if not container:
+        raise KeyError(service_name)
+
+    container.image = await get_image(
+        container.image.repo_tag,
+        no_cache=no_cache,
+    )
+    return container
 
 
 async def update_compose_stack(stack_name: str,
@@ -282,24 +282,3 @@ async def update_compose_stack(stack_name: str,
         'output': output,
         'success': container_status,
     }
-
-
-async def get_compose_service_container(stack_name: str,
-                                        service_name: str,
-                                        no_cache: bool = False):
-    stack = await get_compose_stack(stack_name, use_regctl=False)
-    container = next(
-        (item
-         for item in stack.services
-         if item.service_name == service_name),
-        None
-    )
-    if not container:
-        raise KeyError(service_name)
-
-    container.image = await get_image(
-        container.image.repo_tag,
-        use_regctl=True,
-        no_cache=no_cache,
-    )
-    return container

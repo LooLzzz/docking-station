@@ -42,7 +42,7 @@ export default function SearchBar() {
         radius='xl'
         size='md'
         defaultValue={searchValue}
-        placeholder='Search containers'
+        placeholder='Press / to search...'
         rightSectionWidth={42}
         maw={rem(600)}
         w='100%'
@@ -76,7 +76,7 @@ export default function SearchBar() {
                 />
               </ActionIcon>
             </Popover.Target>
-            <Popover.Dropdown>
+            <Popover.Dropdown p={5}>
               <FiltersPane />
             </Popover.Dropdown>
           </Popover>

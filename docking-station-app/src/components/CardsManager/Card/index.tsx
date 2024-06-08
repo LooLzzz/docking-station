@@ -4,6 +4,7 @@ import { useGetComposeService, useListComposeStacks, useUpdateComposeStackServic
 import {
   ActionIcon,
   Center,
+  Code,
   Group,
   LoadingOverlay,
   Card as MantineCard,
@@ -13,6 +14,7 @@ import {
   rem
 } from '@mantine/core'
 import { useInterval } from '@mantine/hooks'
+import { modals } from '@mantine/modals'
 import {
   IconCalendarDown,
   IconCheck,
@@ -24,7 +26,7 @@ import {
   IconTag,
   IconVersions,
 } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface CardProps {
   stackName: string
@@ -33,6 +35,7 @@ interface CardProps {
   mih?: string
   className?: string
 }
+
 
 export default function Card({
   miw,
@@ -53,6 +56,29 @@ export default function Card({
 
   const [seconds, setSeconds] = useState(0)
   const interval = useInterval(() => setSeconds(s => s + 0.1), 100)
+
+  const releaseStatus = useMemo(() => {
+    const daysAgo = (
+      data?.image?.latestUpdate
+        ? Math.floor((Date.now() - data?.image?.latestUpdate.getTime()) / (1000 * 60 * 60 * 24))
+        : 0
+    )
+    if (daysAgo === 0) return 'Released today'
+    if (daysAgo === 1) return 'Released 1 day ago'
+    return `Released ${daysAgo} days ago`
+  }, [data?.image?.latestUpdate])
+
+  const openMutateConfirmModal = () => modals.openConfirmModal({
+    centered: true,
+    title: 'Confirm Update Service Action',
+    children: (
+      <Text size='sm'>
+        Are you sure you want to update <Code fw='bold'>{stackName}/{serviceName}</Code>?
+      </Text>
+    ),
+    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+    onConfirm: () => mutate({}),
+  })
 
   useEffect(() => {
     loadingOverlayVisible
@@ -89,7 +115,7 @@ export default function Card({
               ? <>
                 <Center>Updates available</Center>
                 {data?.image?.latestVersion ? <Center>{`Version ${data?.image?.latestVersion}`}</Center> : null}
-                <Center>{`Released ${data?.image?.latestUpdate?.toLocaleDateString()}`}</Center>
+                <Center>{releaseStatus}</Center>
               </>
               : 'Up to date'
           }
@@ -107,7 +133,7 @@ export default function Card({
             <ActionIcon
               color='gray'
               variant='transparent'
-              onClick={() => mutate({})}
+              onClick={() => openMutateConfirmModal()}
             >
               <IconCloudDownload
                 size={20}

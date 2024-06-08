@@ -2,7 +2,7 @@ import { useFiltersStore } from '@/store'
 import { Group, Card as MantineCard, Stack, Switch } from '@mantine/core'
 
 export default function SearchBar() {
-  const { updatesOnly, toggleUpdatesOnlyFilter, resetFilters } = useFiltersStore()
+  const { updatesOnly, toggleUpdatesOnlyFilter } = useFiltersStore()
 
   return (
     <MantineCard>

@@ -32,6 +32,7 @@ __all__ = [
 
 
 def cache_key_builder(func: Callable,
+                      prefix: str = '',
                       namespace: str = '',
                       request: Request = None,
                       response: Response = None,
@@ -46,10 +47,10 @@ def cache_key_builder(func: Callable,
     ]
     args_str = ', '.join(args_values)
 
-    base_key = f'{func.__module__}.{func.__name__}({args_str})'
+    key = f'{func.__module__}.{func.__name__}({args_str})'
     if namespace:
-        return f'{namespace}.{base_key}'
-    return base_key
+        key = f'{namespace}.{key}'
+    return f'{prefix}{key}'
 
 
 def cached(expire: Optional[int] = None,
@@ -110,7 +111,7 @@ def cached(expire: Optional[int] = None,
         func.__signature__ = signature
 
         @wraps(func)
-        async def inner(*args: P.args, no_cache: bool = False, **kwargs: P.kwargs) -> R:
+        async def inner(*args: P.args, **kwargs: P.kwargs) -> R:
             nonlocal coder
             nonlocal expire
             nonlocal key_builder
@@ -120,6 +121,8 @@ def cached(expire: Optional[int] = None,
                 """Run cached sync functions in thread pool just like FastAPI."""
                 # if the wrapped function does NOT have request or response in its function signature,
                 # make sure we don't pass them in as keyword arguments
+                if not no_cache_param:
+                    kwargs.pop("no_cache", None)
                 if not request_param:
                     kwargs.pop("request", None)
                 if not response_param:
@@ -140,21 +143,20 @@ def cached(expire: Optional[int] = None,
             expire = expire or FastAPICache.get_expire()
             key_builder = key_builder or FastAPICache.get_key_builder()
             copy_kwargs = kwargs.copy()
+            no_cache: bool = copy_kwargs.pop("no_cache", False)
             request: Optional[Request] = copy_kwargs.pop("request", None)
             response: Optional[Response] = copy_kwargs.pop("response", None)
             backend = FastAPICache.get_backend()
             insp = inspect.signature(func)
             return_type = return_type or insp.return_annotation
-            cache_control = request.headers.get('Cache-Control') if request else None
+            # cache_control = request.headers.get('Cache-Control') if request else None
 
             no_store = (
-                request is not None and (cache_control == 'no-store'
-                                         or 'no_store' in request.query_params)
+                request is not None and 'no_store' in request.query_params
             )
             no_cache = (
                 no_cache or no_store
-                or (request is not None and (cache_control == 'no-cache'
-                                             or 'no_cache' in request.query_params))
+                or (request is not None and 'no_cache' in request.query_params)
             )
 
             if inspect.iscoroutinefunction(key_builder):
@@ -215,7 +217,7 @@ def cached(expire: Optional[int] = None,
             if_none_match = request.headers.get("if-none-match")
             if ret is not None:
                 if response:
-                    response.headers["Cache-Control"] = f"max-age={ttl}"
+                    # response.headers["Cache-Control"] = f"max-age={ttl}"
                     etag = f"W/{hash(ret)}"
                     if if_none_match == etag:
                         response.status_code = 304
@@ -234,7 +236,7 @@ def cached(expire: Optional[int] = None,
             except Exception:
                 logger.warning(f"Error setting cache key '{cache_key}' in backend:", exc_info=True)
 
-            response.headers["Cache-Control"] = f"max-age={expire}"
+            # response.headers["Cache-Control"] = f"max-age={expire}"
             etag = f"W/{hash(encoded_ret)}"
             response.headers["ETag"] = etag
             return ret
