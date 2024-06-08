@@ -10,6 +10,7 @@ server:
   possible_image_version_labels:  # order matters!
     - org.label-schema.version
     - org.opencontainers.image.version
+  time_until_update_is_mature: 1w
 
 auto_updater:
   enabled: false

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Annotated
 
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, PlainSerializer
 from pytimeparse.timeparse import timeparse
 
 from .utils import tryparse_float
@@ -34,4 +34,6 @@ def _validate_interval(value):
     return value
 
 
-Interval = Annotated[timedelta, BeforeValidator(_validate_interval)]
+Interval = Annotated[timedelta,
+                     BeforeValidator(_validate_interval),
+                     PlainSerializer(lambda x: x.total_seconds(), when_used='unless-none')]

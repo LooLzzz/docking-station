@@ -1,5 +1,6 @@
 'use client'
 
+import { useAppSettings } from '@/hooks/appSettings'
 import { useGetComposeService, useListComposeStacks, useUpdateComposeStackService } from '@/hooks/stacks'
 import {
   ActionIcon,
@@ -44,6 +45,8 @@ export default function Card({
   stackName,
   serviceName,
 }: CardProps) {
+  const { data: appSettings } = useAppSettings()
+
   const { isRefetching: isLoadingParents } = useListComposeStacks({
     enabled: false, // no auto-fetch
   })
@@ -57,16 +60,32 @@ export default function Card({
   const [seconds, setSeconds] = useState(0)
   const interval = useInterval(() => setSeconds(s => s + 0.1), 100)
 
+  const isReleaseMature = useMemo(() => {
+    if (!data?.hasUpdates || !appSettings?.server?.timeUntilUpdateIsMature)
+      return false
+
+    const latestUpdateTimestampSeconds = (
+      data?.image?.latestUpdate
+        ? (Date.now() - data?.image?.latestUpdate.getTime()) * 0.001
+        : 0
+    )
+
+    return latestUpdateTimestampSeconds >= appSettings.server.timeUntilUpdateIsMature
+  }, [data?.hasUpdates, data?.image?.latestUpdate, appSettings?.server?.timeUntilUpdateIsMature])
+
   const releaseStatus = useMemo(() => {
+    if (!data?.hasUpdates)
+      return 'Up to date'
+
     const daysAgo = (
       data?.image?.latestUpdate
         ? Math.floor((Date.now() - data?.image?.latestUpdate.getTime()) / (1000 * 60 * 60 * 24))
         : 0
     )
-    if (daysAgo === 0) return 'Released today'
-    if (daysAgo === 1) return 'Released 1 day ago'
-    return `Released ${daysAgo} days ago`
-  }, [data?.image?.latestUpdate])
+    if (daysAgo === 0) return 'Today'
+    if (daysAgo === 1) return '1 day ago'
+    return `${daysAgo} days ago`
+  }, [data?.hasUpdates, data?.image?.latestUpdate])
 
   const openMutateConfirmModal = () => modals.openConfirmModal({
     centered: true,
@@ -115,14 +134,18 @@ export default function Card({
               ? <>
                 <Center>Updates available</Center>
                 {data?.image?.latestVersion ? <Center>{`Version ${data?.image?.latestVersion}`}</Center> : null}
-                <Center>{releaseStatus}</Center>
+                <Center>{releaseStatus} {isReleaseMature ? '[Matured]' : '[Not-matured]'}</Center>
               </>
               : 'Up to date'
           }
         >
           {
             data?.hasUpdates
-              ? <IconExclamationCircle color='#4fb2ff' />
+              ? <IconExclamationCircle color={
+                isReleaseMature
+                  ? '#4fb2ff'
+                  : '#ffab00'
+              } />
               : <IconCheck color='#1ed760' />
           }
         </Tooltip>

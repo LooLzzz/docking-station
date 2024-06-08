@@ -1,10 +1,10 @@
 from itertools import chain
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, status
 
 from .. import routes
 from ..schemas import DockerStack, DockerStackRootModel, GetStatsResponse
-from ..settings import get_app_settings
+from ..settings import AppSettings, get_app_settings
 from .stacks import router as stacks_router
 
 __all__ = [
@@ -24,7 +24,12 @@ async def root():
     return {'message': 'This is not the endpoint you are looking for'}
 
 
-@router.get('/stats', tags=['Stats'], response_model=GetStatsResponse)
+@router.get('/settings', tags=['Misc'], response_model=AppSettings)
+async def get_settings():
+    return app_settings
+
+
+@router.get('/stats', tags=['Misc'], response_model=GetStatsResponse)
 async def get_stats(no_cache: bool = False):
     _stacks = await routes.stacks.list_compose_stacks(no_cache=no_cache)
     stacks = DockerStackRootModel.model_validate(_stacks)

@@ -16,29 +16,33 @@ export default function CardsManager() {
   }))
   const { data = [], isFetching } = useListComposeStacks()
 
-  const services = useMemo(() => data
-    .flatMap(stack => stack.services)
-    .sort((a, b) => (
-      a.hasUpdates === b.hasUpdates
-        ? b.createdAt.getTime() - a.createdAt.getTime()
-        : Number(b.hasUpdates) - Number(a.hasUpdates)
-    ))
-    .filter(service => {
-      let flag = true
+  const services = useMemo(() => (
+    data
+      .flatMap(stack => stack.services)
+      .sort((a, b) => (
+        a.hasUpdates !== b.hasUpdates
+          ? Number(b.hasUpdates) - Number(a.hasUpdates)
+          : a.hasUpdates
+            ? a.image.latestUpdate.getTime() - b.image.latestUpdate.getTime()
+            : b.createdAt.getTime() - a.createdAt.getTime()
+      ))
+      .filter(service => {
+        let flag = true
 
-      if (updatesOnly) {
-        flag &&= service.hasUpdates
-      }
+        if (updatesOnly) {
+          flag &&= service.hasUpdates
+        }
 
-      if (searchValue) {
-        flag &&= [
-          service.stackName?.match(new RegExp(escapeRegExp(searchValue), 'i')),
-          service.name.match(new RegExp(escapeRegExp(searchValue), 'i')),
-        ].some(Boolean)
-      }
+        if (searchValue) {
+          flag &&= [
+            service.stackName?.match(new RegExp(escapeRegExp(searchValue), 'i')),
+            service.name.match(new RegExp(escapeRegExp(searchValue), 'i')),
+          ].some(Boolean)
+        }
 
-      return flag
-    }), [data, updatesOnly, searchValue])
+        return flag
+      })
+  ), [data, updatesOnly, searchValue])
 
   return (
     <div>

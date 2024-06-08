@@ -1,7 +1,11 @@
 #!/bin/bash
 
 cd /app/docking-station-app
-cp -n /app/settings.template.yml /config/settings.yml
+
+if [ ! -f /config/settings.yml ]; then
+    cp -n /app/settings.template.yml /config/settings.yml
+    chmod 775 /config/settings.yml
+fi
 
 concurrently --names=WEB,SERVER,AUTO-UPDATER --prefix-colors=auto --kill-others-on-fail \
     "npm run start" \

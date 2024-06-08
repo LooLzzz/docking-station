@@ -6,6 +6,7 @@ from pydantic import Field, field_validator
 from pydantic_settings import (BaseSettings, PydanticBaseSettingsSource,
                                SettingsConfigDict, YamlConfigSettingsSource)
 
+from ..schemas import CamelCaseAliasedBaseModel
 from ..types import Interval
 
 __all__ = [
@@ -14,7 +15,7 @@ __all__ = [
 ]
 
 
-class AutoUpdaterSettings(BaseSettings):
+class AutoUpdaterSettings(BaseSettings, CamelCaseAliasedBaseModel):
     model_config = SettingsConfigDict(env_prefix='AUTO_UPDATER_')
 
     enabled: bool = False
@@ -26,7 +27,7 @@ class AutoUpdaterSettings(BaseSettings):
         return self.interval.total_seconds()
 
 
-class ServerSettings(BaseSettings):
+class ServerSettings(BaseSettings, CamelCaseAliasedBaseModel):
     model_config = SettingsConfigDict(env_prefix='SERVER_')
 
     cache_control_max_age: Interval = '1d'
@@ -37,10 +38,15 @@ class ServerSettings(BaseSettings):
                                                                          'org.opencontainers.image.source'])
     possible_image_version_labels: list[str] = Field(default_factory=lambda: ['org.label-schema.version',
                                                                               'org.opencontainers.image.version'])
+    time_until_update_is_mature: Interval = '1w'
 
     @property
     def cache_control_max_age_seconds(self):
         return self.cache_control_max_age.total_seconds()
+
+    @property
+    def time_until_update_is_mature_seconds(self):
+        return self.time_until_update_is_mature.total_seconds()
 
     @property
     def ignore_compose_stack_name_pattern(self):
@@ -62,7 +68,7 @@ class ServerSettings(BaseSettings):
         return value
 
 
-class AppSettings(BaseSettings):
+class AppSettings(BaseSettings, CamelCaseAliasedBaseModel):
     model_config = SettingsConfigDict(yaml_file='/app/config/settings.yml')
 
     auto_updater: AutoUpdaterSettings = Field(default_factory=AutoUpdaterSettings)

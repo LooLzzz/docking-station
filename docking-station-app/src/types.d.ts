@@ -1,4 +1,23 @@
 
+export interface AppSettings {
+  autoUpdater: {
+    enabled: boolean
+    interval: number
+    maxConcurrent: number
+  }
+  server: {
+    cacheControlMaxAge: number
+    ignoreComposeStackNameKeywords: string[]
+    ignoreLabelFieldName: string
+    possibleHomepageLabels: string[]
+    possibleImageVersionLabels: string[]
+    timeUntilUpdateIsMature: number
+  }
+  nodeEnv: 'development' | 'production'
+  serverPort: number
+  webPort: number
+}
+
 export interface DockerImageResponse {
   id: string
   createdAt: string
@@ -8,7 +27,7 @@ export interface DockerImageResponse {
   latestUpdate: string
   latestVersion?: string
   repoLocalDigest: string
-  version?: string 
+  version?: string
 }
 
 export interface DockerImage extends DockerImageResponse {

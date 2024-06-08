@@ -1,6 +1,11 @@
 
 export const apiRoutes = {
   /** `GET` */
+  getAppSettings: 'api/settings',
+  /** `GET` */
+  getStats: 'api/stats',
+
+  /** `GET` */
   listComposeStacks: 'api/stacks',
   /** `GET` */
   getComposeStack: (stack: string) => `api/stacks/${stack}`,
