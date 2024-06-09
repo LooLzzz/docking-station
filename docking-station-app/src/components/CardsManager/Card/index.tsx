@@ -218,7 +218,12 @@ export default function Card({
               stroke={2.5}
             />
           </Tooltip>
-          <Text fz='h6' w={rem(250)} truncate='end' title={data?.stackName}>
+          <Text
+            style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+            w={rem(250)}
+            truncate='end'
+            title={data?.stackName}
+          >
             {data?.stackName}
           </Text>
         </Group>
@@ -231,7 +236,12 @@ export default function Card({
               stroke={2.5}
             />
           </Tooltip>
-          <Text fz='h6' w={rem(250)} truncate='end' title={`${data?.image.imageName}:${data?.image.imageTag}`}>
+          <Text
+            style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+            w={rem(250)}
+            truncate='end'
+            title={`${data?.image.imageName}:${data?.image.imageTag}`}
+          >
             {`${data?.image.imageName}:${data?.image.imageTag}`}
           </Text>
         </Group>
@@ -246,7 +256,11 @@ export default function Card({
                 stroke={2.5}
               />
             </Tooltip>
-            <Text fz='h6' w={rem(250)} truncate='end'>
+            <Text
+              style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+              w={rem(250)}
+              truncate='end'
+            >
               {data?.image.version}
             </Text>
           </Group>
@@ -260,7 +274,11 @@ export default function Card({
               stroke={2.5}
             />
           </Tooltip>
-          <Text fz='h6' w={rem(250)} truncate='end'>
+          <Text
+            style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+            w={rem(250)}
+            truncate='end'
+          >
             {data?.uptime}
           </Text>
         </Group> */}
@@ -273,7 +291,11 @@ export default function Card({
               stroke={2.5}
             />
           </Tooltip>
-          <Text fz='h6' w={rem(250)} truncate='end'>
+          <Text
+          style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+          w={rem(250)} 
+          truncate='end'
+          >
             {data?.image?.createdAt?.toLocaleDateString()}
           </Text>
         </Group>

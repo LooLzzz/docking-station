@@ -27,11 +27,14 @@ export default function EmptyCard({
       <Center h='100%'>
         {
           !loading &&
-          <Text fz='h3' className={determinationMonoFont.className}>
+          <Text
+            className={determinationMonoFont.className}
+            style={{ fontSize: 'var(--mantine-h3-font-size)' }}
+          >
             * But nobody came.
           </Text>
         }
-        <LoadingOverlay visible={loading}/>
+        <LoadingOverlay visible={loading} />
       </Center>
     </MantineCard>
   )
