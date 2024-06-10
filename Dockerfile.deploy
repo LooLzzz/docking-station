@@ -39,6 +39,7 @@ ENV WEB_PORT 3000
 ENV SERVER_PORT 3001
 
 EXPOSE ${WEB_PORT}
+EXPOSE ${SERVER_PORT}
 USER root
 
 # install npm and unzip
