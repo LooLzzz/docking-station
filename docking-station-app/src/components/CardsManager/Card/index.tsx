@@ -1,7 +1,7 @@
 'use client'
 
 import { useAppSettings } from '@/hooks/appSettings'
-import { useGetComposeService, useListComposeStacks, useUpdateComposeStackService } from '@/hooks/stacks'
+import { useGetComposeService, useListComposeStacks, useUpdateComposeStackServiceWS } from '@/hooks/stacks'
 import {
   ActionIcon,
   Center,
@@ -27,7 +27,7 @@ import {
   IconTag,
   IconVersions,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 interface CardProps {
   stackName: string
@@ -50,7 +50,7 @@ export default function Card({
   const { isRefetching: isLoadingParents } = useListComposeStacks({
     enabled: false, // no auto-fetch
   })
-  const { mutate, isLoading: isMutating } = useUpdateComposeStackService(stackName, serviceName)
+  const { mutate, isMutating, lastMessage } = useUpdateComposeStackServiceWS(stackName, serviceName, { pruneImages: true })
   const { data, refetch, isRefetching, isLoading } = useGetComposeService(stackName, serviceName, {
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
@@ -87,7 +87,7 @@ export default function Card({
     return `${daysAgo} days ago`
   }, [data?.hasUpdates, data?.image?.latestUpdate])
 
-  const openMutateConfirmModal = () => modals.openConfirmModal({
+  const openMutateConfirmModal = useCallback(() => modals.openConfirmModal({
     centered: true,
     title: 'Confirm Update Service Action',
     children: (
@@ -96,8 +96,8 @@ export default function Card({
       </Text>
     ),
     labels: { confirm: 'Confirm', cancel: 'Cancel' },
-    onConfirm: () => mutate({}),
-  })
+    onConfirm: () => mutate(),
+  }), [modals, data?.image.imageName])
 
   useEffect(() => {
     loadingOverlayVisible
@@ -292,9 +292,9 @@ export default function Card({
             />
           </Tooltip>
           <Text
-          style={{ fontSize: 'var(--mantine-h6-font-size)' }}
-          w={rem(250)} 
-          truncate='end'
+            style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+            w={rem(250)}
+            truncate='end'
           >
             {data?.image?.createdAt?.toLocaleDateString()}
           </Text>
@@ -302,16 +302,19 @@ export default function Card({
 
       </Stack>
 
-      <LoadingOverlay pb={10}
+      <LoadingOverlay
         visible={loadingOverlayVisible}
         overlayProps={{
           blur: 1,
           children: (
-            <Center h='100%' w='100%' pt={65}>
-              {
-                `${seconds.toFixed(1)}s`
-              }
-            </Center>
+            <Stack align='center' justify='center' h='100%' gap={45}>
+              <Text>
+                {lastMessage ? lastMessage.stage : ''}
+              </Text>
+              <Text pt={lastMessage ? undefined : 25}>
+                {`${seconds.toFixed(1)}s`}
+              </Text>
+            </Stack>
           ),
         }}
       />

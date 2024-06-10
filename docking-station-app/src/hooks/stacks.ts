@@ -4,12 +4,15 @@ import type {
   DockerContainerResponse,
   DockerServiceUpdateRequest,
   DockerServiceUpdateResponse,
+  DockerServiceUpdateWsMessage,
   DockerStack,
-  DockerStackResponse
+  DockerStackResponse,
 } from '@/types'
 import { notifications } from '@mantine/notifications'
 import axios from 'axios'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { UseQueryOptions, useMutation, useQuery, useQueryClient } from 'react-query'
+import useWebSocket from 'react-use-websocket'
 import { parseDockerContainerDates, parseDockerStackDates } from './utils'
 
 
@@ -165,3 +168,94 @@ export const useUpdateComposeStackService = (
     )
   }
 )
+
+export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMessage>(stackName: string, serviceName: string, updateRequest: DockerServiceUpdateRequest = {}) => {
+  const queryClient = useQueryClient()
+  const serverPort = process.env.SERVER_PORT ?? 3001
+  const [connect, setConnect] = useState(false)
+  const [messageHistory, setMessageHistory] = useState<T[]>([])
+  const [isMutating, setIsMutating] = useState(false)
+
+  const appendMessageHistory = useCallback((item: T) => {
+    setMessageHistory((prev) => [...prev, item])
+  }, [setMessageHistory])
+  const clearMessageHistory = useCallback(
+    () => setMessageHistory([]),
+    [setMessageHistory]
+  )
+
+  const onSuccess = async () => {
+    // force a no-cache refetch
+    await queryClient.invalidateQueries(['stacks', stackName, serviceName])
+    await queryClient.refetchQueries(['stacks', stackName, serviceName])
+
+    notifications.show({
+      title: 'Service updated',
+      message: 'The service has been updated successfully',
+      color: 'teal',
+    })
+  }
+
+  const onError = ({ reason, code }: WebSocketEventMap['close']) => {
+    notifications.show({
+      title: 'Service update failed',
+      message: `WebSocket closed unexpectedly: ${reason} (${code})`,
+      color: 'red',
+    })
+  }
+
+  const ws = useWebSocket(
+    `ws://localhost:${serverPort}/${apiRoutes.updateComposeStackService(stackName, serviceName)}/ws`,
+    {
+      queryParams: updateRequest as {},
+      shouldReconnect: () => false,
+      onMessage: (event) => appendMessageHistory(JSON.parse(event.data)),
+      onClose: (event) => event.code !== 1000 && onError(event)
+    },
+    connect,
+  )
+
+  useEffect(() => {
+    switch (ws.readyState) {
+      case WebSocket.CONNECTING:
+        appendMessageHistory({ stage: 'Connecting' } as T)
+
+      case WebSocket.OPEN:
+        setIsMutating(true)
+        ws.sendJsonMessage(updateRequest ?? {})
+        break
+
+      case WebSocket.CLOSED:
+        setConnect(false)
+        setTimeout(() => {
+          onSuccess()
+          clearMessageHistory()
+          setIsMutating(false)
+        }, 750)
+        break
+    }
+  }, [ws.readyState])
+
+  const lastMessage = useMemo(() =>
+    messageHistory.length > 0
+      ? messageHistory[messageHistory.length - 1]
+      : undefined,
+    [messageHistory]
+  )
+
+  useEffect(() => {
+    if (lastMessage) {
+      console.log(lastMessage)
+    }
+  }, [lastMessage])
+
+  return {
+    // ws,
+    readyState: ws.readyState,
+    getWebSocket: ws.getWebSocket,
+    messageHistory,
+    lastMessage,
+    isMutating,
+    mutate: () => setConnect(true),
+  }
+}

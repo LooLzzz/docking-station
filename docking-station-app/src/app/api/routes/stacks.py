@@ -1,8 +1,10 @@
 import asyncio
+from logging import getLogger
 
-from fastapi import APIRouter
+from fastapi import APIRouter, WebSocket
 from fastapi.exceptions import HTTPException
 from fastapi_cache import FastAPICache
+from starlette.websockets import WebSocketDisconnect
 
 from ..schemas import (DockerContainerResponse, DockerStackResponse,
                        DockerStackUpdateRequest, DockerStackUpdateResponse)
@@ -13,6 +15,7 @@ __all__ = [
     'router',
 ]
 
+logger = getLogger(__name__)
 app_settings = get_app_settings()
 router = APIRouter()
 
@@ -76,3 +79,49 @@ async def update_compose_stack_service(stack: str,
     key, _ = cache_key_builder(list_compose_stacks).split('(', 1)
     await cache_backend.clear(namespace=key)
     return resp
+
+
+@router.websocket('/{stack}/{service}/ws')
+async def update_compose_stack_service(stack: str,
+                                       service: str,
+                                       websocket: WebSocket):
+    exc = None
+
+    try:
+        await websocket.accept()
+        request_body = DockerStackUpdateRequest.model_validate(
+            await websocket.receive_json()
+        )
+
+        task_thread, message_queue = docker_services.update_compose_stack_ws(
+            stack_name=stack,
+            service_name=service,
+            infer_envfile=request_body.infer_envfile,
+            restart_containers=request_body.restart_containers,
+            prune_images=request_body.prune_images,
+        )
+
+        while True:
+            try:
+                message = message_queue.get_nowait()
+                await websocket.send_json(message)
+            except asyncio.QueueEmpty:
+                if not task_thread.is_alive():
+                    task_thread.join()  # re-raise any exceptions from the task
+                    break
+            await asyncio.sleep(0.01)
+
+    except WebSocketDisconnect:
+        """ignore"""
+
+    except Exception as _exc:
+        logger.exception('Error in websocket handler')
+        exc = _exc
+
+    if exc:
+        await websocket.close(
+            code=1011,
+            reason=str(exc),
+        )
+    else:
+        await websocket.close()

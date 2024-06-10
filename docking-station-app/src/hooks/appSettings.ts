@@ -13,6 +13,7 @@ export const useAppSettings = <TData extends AppSettings>(options: UseQueryOptio
     },
     {
       initialData: {} as TData,
+      refetchOnWindowFocus: false,
       ...options,
     }
   )

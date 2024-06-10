@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from logging import getLogger
+from threading import Thread
 
 from fastapi import HTTPException
 from python_on_whales import DockerClient, docker
@@ -8,8 +9,9 @@ from python_on_whales.components.container.cli_wrapper import Container as Whale
 from python_on_whales.components.container.cli_wrapper import DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
-from ..schemas import DockerContainer, DockerImage, DockerStack
+from ..schemas import DockerContainer, DockerImage, DockerStack, MessageDict
 from ..settings import get_app_settings
+from ..utils import subprocess_stream_generator
 from .regctl import get_image_inspect, get_image_remote_digest
 
 __all__ = [
@@ -19,6 +21,7 @@ __all__ = [
     'list_compose_stacks',
     'list_containers',
     'list_images',
+    'update_compose_stack_ws',
     'update_compose_stack',
 ]
 
@@ -207,17 +210,19 @@ async def update_compose_stack(stack_name: str,
     config_files = None
     output = []
 
-    stacks = docker.compose.ls(
-        filters={'name': stack_name},
-    )
+    stack = next(iter(
+        docker.compose.ls(
+            filters={'name': stack_name},
+        )
+    ), None)
 
-    if not stacks:
+    if not stack:
         raise HTTPException(
             status_code=404,
             detail=f'Compose stack {stack_name!r} not found',
         )
 
-    config_files = stacks[0].config_files
+    config_files = stack.config_files
 
     if infer_envfile:
         for p in config_files:
@@ -282,3 +287,90 @@ async def update_compose_stack(stack_name: str,
         'output': output,
         'success': container_status,
     }
+
+
+def update_compose_stack_ws(stack_name: str,
+                            service_name: str = None,
+                            infer_envfile: bool = True,
+                            restart_containers: bool = True,
+                            prune_images: bool = False):
+    queue: asyncio.Queue[MessageDict] = asyncio.Queue()
+
+    async def _task():
+        nonlocal queue
+        nonlocal stack_name
+        nonlocal service_name
+        nonlocal infer_envfile
+        nonlocal restart_containers
+        nonlocal prune_images
+
+        env_file = None
+        config_files = None
+        output = []
+
+        stack = next(iter(
+            docker.compose.ls(
+                filters={'name': stack_name},
+            )
+        ), None)
+
+        if not stack:
+            raise ValueError(f'Compose stack {stack_name!r} not found')
+
+        config_files = stack.config_files
+
+        if infer_envfile:
+            for p in config_files:
+                if p.with_suffix('.env').exists():
+                    env_file = p.with_suffix('.env')
+                    break
+                if p.with_name('.env').exists():
+                    env_file = p.with_name('.env')
+                    break
+
+        queue.put_nowait(
+            MessageDict(stage='Starting')
+        )
+
+        config_file_cmd = ['-f', *config_files] if config_files else []
+        env_file_cmd = ['--env-file', env_file] if env_file else []
+        stdout = subprocess_stream_generator([
+            'docker', 'compose',
+            *config_file_cmd,
+            *env_file_cmd,
+            'up', '-d',
+            '--pull', 'always',
+            service_name,
+        ])
+        for line in stdout:
+            output.append(line)
+            queue.put_nowait(
+                MessageDict(
+                    stage='compose up -d --pull always',
+                    payload=line,
+                )
+            )
+
+        if prune_images:
+            stdout = subprocess_stream_generator([
+                'docker', 'image', 'prune', '-f'
+            ])
+            for line in stdout:
+                output.append(line)
+                queue.put_nowait(
+                    MessageDict(
+                        stage='docker image prune',
+                        payload=line,
+                    )
+                )
+
+        queue.put_nowait(
+            MessageDict(
+                stage='Finished',
+                # payload=output
+            )
+        )
+
+    thread = Thread(target=lambda: asyncio.run(_task()), daemon=True)
+    thread.start()
+    return thread, queue

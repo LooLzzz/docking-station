@@ -5,3 +5,4 @@ pydantic_settings==2.2.1
 python-on-whales==0.71.0
 pytimeparse==1.1.8
 sqlmodel==0.0.18
+websockets==12.0

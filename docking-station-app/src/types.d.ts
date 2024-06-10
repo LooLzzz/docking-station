@@ -87,3 +87,8 @@ export interface DockerServiceUpdateResponse {
   success: boolean
   output: string[]
 }
+
+export interface DockerServiceUpdateWsMessage {
+  stage: string
+  payload: string
+}

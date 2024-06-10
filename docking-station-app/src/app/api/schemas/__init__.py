@@ -4,3 +4,4 @@ from .images import *
 from .info import *
 from .regctl import *
 from .stacks import *
+from .tasks import *

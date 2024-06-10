@@ -34,55 +34,48 @@ RUN npm run build
 FROM python:3.12-slim AS runner
 WORKDIR /app
 
-# install npm and unzip
-RUN apt-get update \
-    && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends npm unzip curl
-
-# install docker
-RUN curl -fsSL https://get.docker.com | bash
-
-# install regctl
-# https://github.com/regclient/regclient
-RUN curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/bin/regctl
-RUN chmod 755 /usr/bin/regctl
-
-# install concurrently package for running multiple commands
-# https://www.npmjs.com/package/concurrently
-RUN npm install -g concurrently next
-
 ENV NODE_ENV production
 ENV WEB_PORT 3000
 ENV SERVER_PORT 3001
-ENV AUTO_UPDATER_ENABLED false
 
-COPY --from=builder /app/public /app/docking-station-app/public
+EXPOSE ${WEB_PORT}
+USER root
 
-RUN mkdir /app/docking-station-app/.next
+# install npm and unzip
+# install docker
+# install regctl: https://github.com/regclient/regclient
+# install concurrently package for running multiple commands: https://www.npmjs.com/package/concurrently
+# cleanup
+RUN apt-get update \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && export PYTHONDONTWRITEBYTECODE=1 \
+    && apt-get -y install --no-install-recommends npm unzip curl \
+    && curl -fsSL https://get.docker.com | bash \
+    && curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/bin/regctl \
+    && chmod 755 /usr/bin/regctl \
+    && npm install -g concurrently next \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /app/docking-station-app/.next \
+    && mkdir -p /app/logs /app/config /app/data \
+    && ln -snf /app/config /config \
+    && ln -snf /app/data /data \
+    && ln -snf /app/logs /logs
 
 # Install python dependencies
 COPY ./docking-station-app/requirements.txt /app/docking-station-app/requirements.txt
 COPY ./docking-station-app/src/app/api /app/docking-station-app/src/app/api
-RUN python3 -m pip install -r /app/docking-station-app/requirements.txt
+RUN python3 -m pip install --no-cache-dir -r /app/docking-station-app/requirements.txt
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder /app/public /app/docking-station-app/public
 COPY --from=builder /app/.next/standalone /app/docking-station-app/
 COPY --from=builder /app/.next/static /app/docking-station-app/.next/static
 
-RUN mkdir /app/logs /app/config /app/data
-RUN ln -snf /app/config /config
-RUN ln -snf /app/data /data
-RUN ln -snf /app/logs /logs
-
-COPY settings.template.yml /app/settings.template.yml
-
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod 755 /app/entrypoint.sh
-
-EXPOSE ${WEB_PORT}
-
-USER root
+COPY --chmod=777 settings.template.yml /app/settings.template.yml
+COPY --chmod=777 entrypoint.sh /app/entrypoint.sh
 
 CMD ["/bin/bash", "/app/entrypoint.sh"]
 ## RUNNER ##
