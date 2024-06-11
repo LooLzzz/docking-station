@@ -64,8 +64,6 @@ async def get_compose_service_container(stack: str, service: str, no_cache: bool
 async def update_compose_stack_service(stack: str,
                                        service: str,
                                        request_body: DockerStackUpdateRequest = None):
-    # TODO: make this a streaming response
-
     request_body = request_body or DockerStackUpdateRequest()
     resp = await docker_services.update_compose_stack(
         stack_name=stack,
@@ -76,7 +74,7 @@ async def update_compose_stack_service(stack: str,
     )
 
     cache_backend = FastAPICache.get_backend()
-    key, _ = cache_key_builder(list_compose_stacks).split('(', 1)
+    key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
     await cache_backend.clear(namespace=key)
     return resp
 
@@ -125,3 +123,7 @@ async def update_compose_stack_service(stack: str,
         )
     else:
         await websocket.close()
+
+    cache_backend = FastAPICache.get_backend()
+    key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
+    await cache_backend.clear(namespace=key)

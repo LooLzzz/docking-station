@@ -105,7 +105,10 @@ export default function Card({
       </Text>
     ),
     labels: { confirm: 'Confirm', cancel: 'Cancel' },
-    onConfirm: () => mutate(),
+    onConfirm: () => {
+      mutate()
+      executionDetailsModalOpen()
+    },
   }), [modals, data?.image.imageName])
 
   useEffect(() => {
@@ -329,6 +332,7 @@ export default function Card({
       />
 
       <Modal
+        centered
         radius='lg'
         padding={25}
         opened={executionDetailsModalVisible}

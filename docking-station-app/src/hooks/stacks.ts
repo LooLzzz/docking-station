@@ -203,13 +203,14 @@ export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMe
     })
   }
 
+  // TODO: add timeout while trying to establish a connection
   const ws = useWebSocket(
     apiRoutes.updateComposeStackServiceWS(stackName, serviceName),
     {
       queryParams: updateRequest as {},
       shouldReconnect: () => false,
       onMessage: (event) => appendMessageHistory(JSON.parse(event.data)),
-      onClose: (event) => event.code !== 1000 && onError(event)
+      onClose: (event) => event.code !== 1000 && onError(event),
     },
     connect,
   )
