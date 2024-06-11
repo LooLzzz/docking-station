@@ -171,7 +171,6 @@ export const useUpdateComposeStackService = (
 
 export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMessage>(stackName: string, serviceName: string, updateRequest: DockerServiceUpdateRequest = {}) => {
   const queryClient = useQueryClient()
-  const serverPort = process.env.SERVER_PORT ?? 3001
   const [connect, setConnect] = useState(false)
   const [messageHistory, setMessageHistory] = useState<T[]>([])
   const [isMutating, setIsMutating] = useState(false)
@@ -205,7 +204,7 @@ export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMe
   }
 
   const ws = useWebSocket(
-    `${apiRoutes.updateComposeStackService(stackName, serviceName)}/ws`,
+    apiRoutes.updateComposeStackServiceWS(stackName, serviceName),
     {
       queryParams: updateRequest as {},
       shouldReconnect: () => false,
@@ -218,7 +217,8 @@ export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMe
   useEffect(() => {
     switch (ws.readyState) {
       case WebSocket.CONNECTING:
-        appendMessageHistory({ stage: 'Connecting' } as T)
+        clearMessageHistory()
+        setMessageHistory((prev) => [{ stage: 'Connecting' }] as T[])
 
       case WebSocket.OPEN:
         setIsMutating(true)
@@ -229,7 +229,6 @@ export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMe
         setConnect(false)
         setTimeout(() => {
           onSuccess()
-          clearMessageHistory()
           setIsMutating(false)
         }, 750)
         break

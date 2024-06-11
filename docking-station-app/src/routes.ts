@@ -16,4 +16,5 @@ export const apiRoutes = {
   updateComposeStack: (stack: string) => `api/stacks/${stack}`,
   /** `POST` */
   updateComposeStackService: (stack: string, service: string) => `api/stacks/${stack}/${service}`,
+  updateComposeStackServiceWS: (stack: string, service: string) => `api/stacks/${stack}/${service}/ws`,
 }

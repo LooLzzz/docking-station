@@ -4,17 +4,20 @@ import { useAppSettings } from '@/hooks/appSettings'
 import { useGetComposeService, useListComposeStacks, useUpdateComposeStackServiceWS } from '@/hooks/stacks'
 import {
   ActionIcon,
+  Box,
   Center,
   Code,
   Group,
   LoadingOverlay,
   Card as MantineCard,
+  Modal,
   Stack,
   Text,
+  Title,
   Tooltip,
   rem
 } from '@mantine/core'
-import { useInterval } from '@mantine/hooks'
+import { useDisclosure, useInterval } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
 import {
   IconCalendarDown,
@@ -22,12 +25,14 @@ import {
   IconCloudDownload,
   IconExclamationCircle,
   IconExternalLink,
+  IconListDetails,
   IconRefresh,
   IconStack2,
   IconTag,
   IconVersions,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import ExecutionDetails from './ExecutionDetails'
 
 interface CardProps {
   stackName: string
@@ -50,7 +55,7 @@ export default function Card({
   const { isRefetching: isLoadingParents } = useListComposeStacks({
     enabled: false, // no auto-fetch
   })
-  const { mutate, isMutating, lastMessage } = useUpdateComposeStackServiceWS(stackName, serviceName, { pruneImages: true })
+  const { mutate, isMutating, lastMessage, messageHistory } = useUpdateComposeStackServiceWS(stackName, serviceName, { pruneImages: true })
   const { data, refetch, isRefetching, isLoading } = useGetComposeService(stackName, serviceName, {
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
@@ -59,6 +64,10 @@ export default function Card({
 
   const [seconds, setSeconds] = useState(0)
   const interval = useInterval(() => setSeconds(s => s + 0.1), 100)
+  const [executionDetailsModalVisible, {
+    open: executionDetailsModalOpen,
+    close: executionDetailsModalClose,
+  }] = useDisclosure()
 
   const isReleaseMature = useMemo(() => {
     if (!data?.hasUpdates || !appSettings?.server?.timeUntilUpdateIsMature)
@@ -103,7 +112,7 @@ export default function Card({
     loadingOverlayVisible
       ? interval.start()
       : interval.stop()
-  }, [loadingOverlayVisible, interval.start, interval.stop])
+  }, [loadingOverlayVisible])
 
   useEffect(() => {
     !interval.active
@@ -318,6 +327,36 @@ export default function Card({
           ),
         }}
       />
+
+      <Modal
+        radius='lg'
+        padding={25}
+        opened={executionDetailsModalVisible}
+        onClose={executionDetailsModalClose}
+        title={<Title order={2} fw='bold'>Execution Details</Title>}
+      >
+        <ExecutionDetails messageHistory={messageHistory} />
+      </Modal>
+
+      {
+        messageHistory.length > 0 &&
+        <Box pos='absolute' bottom={12.5} right={20} style={{ zIndex: 999 }}>
+          <Tooltip withArrow label='Execution Details' events={{
+            hover: true,
+            focus: false,
+            touch: false,
+          }}>
+            <ActionIcon
+              size='sm'
+              color='gray.5'
+              variant='transparent'
+              onClick={() => executionDetailsModalOpen()}
+            >
+              <IconListDetails />
+            </ActionIcon>
+          </Tooltip>
+        </Box>
+      }
     </MantineCard>
   )
 }
