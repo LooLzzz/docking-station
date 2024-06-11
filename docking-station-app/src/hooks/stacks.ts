@@ -205,7 +205,7 @@ export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMe
   }
 
   const ws = useWebSocket(
-    `ws://localhost:${serverPort}/${apiRoutes.updateComposeStackService(stackName, serviceName)}/ws`,
+    `${apiRoutes.updateComposeStackService(stackName, serviceName)}/ws`,
     {
       queryParams: updateRequest as {},
       shouldReconnect: () => false,

@@ -1,8 +1,7 @@
-/** @type {import('next').NextConfig} */
-
 const NODE_ENV = process.env.NODE_ENV ?? 'development'
 const SERVER_PORT = process.env.SERVER_PORT ?? 3001
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
 
@@ -20,8 +19,8 @@ const nextConfig = {
         source: "/openapi.json",
         destination: `http://127.0.0.1:${SERVER_PORT}/openapi.json`,
       },
-    ];
+    ]
   },
-};
+}
 
-module.exports = nextConfig;
+export default nextConfig
