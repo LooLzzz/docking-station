@@ -1,6 +1,7 @@
 
 server:
   cache_control_max_age: 1d
+  dryrun: false
   ignore_compose_stack_name_keywords:
     - devcontainer
   possible_homepage_labels:  # order matters!

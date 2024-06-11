@@ -334,12 +334,13 @@ def update_compose_stack_ws(stack_name: str,
 
         config_file_cmd = ['-f', *config_files] if config_files else []
         env_file_cmd = ['--env-file', env_file] if env_file else []
+        pull_cmd = ['--pull', 'always'] if app_settings.server.dryrun else []
         stdout = subprocess_stream_generator([
             'docker', 'compose',
             *config_file_cmd,
             *env_file_cmd,
             'up', '-d',
-            '--pull', 'always',
+            *pull_cmd,
             service_name,
         ])
         for line in stdout:

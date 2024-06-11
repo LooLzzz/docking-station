@@ -31,6 +31,7 @@ class ServerSettings(BaseSettings, CamelCaseAliasedBaseModel):
     model_config = SettingsConfigDict(env_prefix='SERVER_')
 
     cache_control_max_age: Interval = '1d'
+    dryrun: bool = False
     ignore_compose_stack_name_keywords: list[str] = Field(default_factory=lambda: ['devcontainer'])
     ignore_label_field_name: str = 'com.loolzzz.docking-station.ignore'
     possible_homepage_labels: list[str] = Field(default_factory=lambda: ['org.label-schema.url',
