@@ -1,6 +1,6 @@
 import { DockerServiceUpdateWsMessage } from '@/types'
-import { Blockquote, Box, Code, Stack, Text, Timeline, Title } from '@mantine/core'
-import { useEffect, useMemo, useState } from 'react'
+import { Code, Timeline } from '@mantine/core'
+import { useMemo } from 'react'
 
 interface ExecutionDetailsProps {
   messageHistory?: DockerServiceUpdateWsMessage[]
@@ -29,7 +29,7 @@ export default function ExecutionDetails({
           <Timeline.Item key={index} title={stage}>
             {
               lines.length > 0 &&
-              <Code block>
+              <Code block w='100%'>
                 {lines.join('\n')}
               </Code>
             }

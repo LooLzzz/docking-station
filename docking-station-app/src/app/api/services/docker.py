@@ -368,7 +368,7 @@ def update_compose_stack_ws(stack_name: str,
         await queue.put(
             MessageDict(
                 stage='Finished',
-                # payload=output
+                # payload=output,
             )
         )
 

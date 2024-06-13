@@ -64,7 +64,7 @@ async def get_compose_service_container(stack: str, service: str, no_cache: bool
 
 
 @router.post('/{stack}/{service}/task', tags=['[UPDATE] Stacks'], response_model=StartComposeStackServiceUpdateTaskResponse)
-async def start_compose_stack_service_update_task(stack: str, service: str, request_body: DockerStackUpdateRequest):
+async def create_compose_stack_service_update_task(stack: str, service: str, request_body: DockerStackUpdateRequest):
     task_thread, message_queue = docker_services.update_compose_stack_ws(
         stack_name=stack,
         service_name=service,
@@ -83,7 +83,7 @@ async def start_compose_stack_service_update_task(stack: str, service: str, requ
 
 
 @router.get('/{stack}/{service}/task', tags=['[UPDATE] Stacks'], response_model=list[MessageDictResponse])
-async def get_compose_stack_service_update_task(stack: str, service: str):
+async def poll_compose_stack_service_update_task(stack: str, service: str):
     if (stack, service) not in task_store:
         return []
 
