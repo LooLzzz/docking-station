@@ -365,7 +365,7 @@ def update_compose_stack_ws(stack_name: str,
                     )
                 )
 
-        queue.put_nowait(
+        await queue.put(
             MessageDict(
                 stage='Finished',
                 # payload=output

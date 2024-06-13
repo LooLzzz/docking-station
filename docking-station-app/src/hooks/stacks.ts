@@ -9,7 +9,7 @@ import type {
   DockerStackResponse,
 } from '@/types'
 import { notifications } from '@mantine/notifications'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { UseQueryOptions, useMutation, useQuery, useQueryClient } from 'react-query'
 import useWebSocket from 'react-use-websocket'
@@ -119,64 +119,16 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
   )
 }
 
-export const useUpdateComposeStackService = (
-  <
-    TData extends DockerServiceUpdateResponse,
-    TVar extends DockerServiceUpdateRequest,
-  >(
-    stackName: string,
-    serviceName: string,
-  ) => {
-
-    const queryClient = useQueryClient()
-
-    return useMutation<TData, Error, TVar>(
-      async (vars) => {
-        const { data: { output, success } } = await axios.post<TData>(
-          apiRoutes.updateComposeStackService(stackName, serviceName),
-          vars
-        )
-
-        if (!success)
-          throw new Error(output.join('\n'))
-
-        return { output, success } as TData
-      },
-
-      {
-        mutationKey: ['stacks', stackName, serviceName],
-        onSuccess: async () => {
-          // force a no-cache refetch
-          await queryClient.invalidateQueries(['stacks', stackName, serviceName])
-          await queryClient.refetchQueries(['stacks', stackName, serviceName])
-
-          notifications.show({
-            title: 'Service updated',
-            message: 'The service has been updated successfully',
-            color: 'teal',
-          })
-        },
-
-        onError(error) {
-          notifications.show({
-            title: 'Service update failed',
-            message: error.message,
-            color: 'red',
-          })
-        },
-      }
-    )
-  }
-)
-
-export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMessage>(stackName: string, serviceName: string, updateRequest: DockerServiceUpdateRequest = {}) => {
+export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWsMessage>(stackName: string, serviceName: string, options: DockerServiceUpdateRequest = {}) => {
   const queryClient = useQueryClient()
-  const [connect, setConnect] = useState(false)
-  const [messageHistory, setMessageHistory] = useState<T[]>([])
-  const [isMutating, setIsMutating] = useState(false)
+  const [enabled, setEnabled] = useState(false)
+  const [messageHistory, setMessageHistory] = useState<TData[]>([])
 
-  const appendMessageHistory = useCallback((item: T) => {
+  const appendMessageHistory = useCallback((item: TData) => {
     setMessageHistory((prev) => [...prev, item])
+  }, [setMessageHistory])
+  const concatMessageHistory = useCallback((items: TData[]) => {
+    setMessageHistory((prev) => [...prev, ...items])
   }, [setMessageHistory])
   const clearMessageHistory = useCallback(
     () => setMessageHistory([]),
@@ -185,8 +137,11 @@ export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMe
 
   const onSuccess = async () => {
     // force a no-cache refetch
+    await queryClient.cancelQueries(['stacks', 'task', stackName, serviceName])
     await queryClient.invalidateQueries(['stacks', stackName, serviceName])
     await queryClient.refetchQueries(['stacks', stackName, serviceName])
+
+    setEnabled(false)
 
     notifications.show({
       title: 'Service updated',
@@ -195,46 +150,18 @@ export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMe
     })
   }
 
-  const onError = ({ reason, code }: WebSocketEventMap['close']) => {
+  const onError = (error: Error | AxiosError) => {
+    if (
+      axios.isAxiosError(error)
+      && error.status === 404
+    ) return // ignore 404 errors
+
     notifications.show({
-      title: 'Service update failed',
-      message: `WebSocket closed unexpectedly: ${reason} (${code})`,
+      title: 'Unexpected error',
+      message: error.message,
       color: 'red',
     })
   }
-
-  // TODO: add timeout while trying to establish a connection
-  const ws = useWebSocket(
-    apiRoutes.updateComposeStackServiceWS(stackName, serviceName),
-    {
-      queryParams: updateRequest as {},
-      shouldReconnect: () => false,
-      onMessage: (event) => appendMessageHistory(JSON.parse(event.data)),
-      onClose: (event) => event.code !== 1000 && onError(event),
-    },
-    connect,
-  )
-
-  useEffect(() => {
-    switch (ws.readyState) {
-      case WebSocket.CONNECTING:
-        clearMessageHistory()
-        setMessageHistory((prev) => [{ stage: 'Connecting' }] as T[])
-
-      case WebSocket.OPEN:
-        setIsMutating(true)
-        ws.sendJsonMessage(updateRequest ?? {})
-        break
-
-      case WebSocket.CLOSED:
-        setConnect(false)
-        setTimeout(() => {
-          onSuccess()
-          setIsMutating(false)
-        }, 750)
-        break
-    }
-  }, [ws.readyState])
 
   const lastMessage = useMemo(() =>
     messageHistory.length > 0
@@ -246,16 +173,57 @@ export const useUpdateComposeStackServiceWS = <T extends DockerServiceUpdateWsMe
   useEffect(() => {
     if (lastMessage) {
       console.log(lastMessage)
+
+      if (lastMessage.stage.toLowerCase() === 'finished') {
+        onSuccess()
+      }
     }
   }, [lastMessage])
 
+  const mutate = async () => {
+    queryClient.invalidateQueries(['stacks', 'task', stackName, serviceName])
+    setMessageHistory([{ stage: 'Connecting...', payload: null } as any])
+    setEnabled(true)
+  }
+
+  const { } = useQuery(
+    ['stacks', 'task', stackName, serviceName, 'create'],
+    {
+      enabled,
+      staleTime: Infinity,
+      retry: false,
+      onError,
+      queryFn: async () => {
+        const { data } = await axios.post(
+          apiRoutes.createUpdateComposeStackServiceTask(stackName, serviceName),
+          options,
+        )
+        return data
+      },
+    },
+  )
+
+  const { isLoading: isPolling } = useQuery(
+    ['stacks', 'task', stackName, serviceName, 'poll'],
+    {
+      enabled,
+      refetchInterval: 100,
+      onError,
+      queryFn: async () => {
+        const { data } = await axios.get<TData[]>(
+          apiRoutes.pollUpdateComposeStackServiceTask(stackName, serviceName),
+        )
+        concatMessageHistory(data)
+        return data
+      },
+    },
+  )
+
   return {
-    // ws,
-    readyState: ws.readyState,
-    getWebSocket: ws.getWebSocket,
     messageHistory,
     lastMessage,
-    isMutating,
-    mutate: () => setConnect(true),
+    isPolling,
+    isMutating: enabled,
+    mutate,
   }
 }

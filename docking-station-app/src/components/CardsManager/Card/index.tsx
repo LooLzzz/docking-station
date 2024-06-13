@@ -1,7 +1,7 @@
 'use client'
 
 import { useAppSettings } from '@/hooks/appSettings'
-import { useGetComposeService, useListComposeStacks, useUpdateComposeStackServiceWS } from '@/hooks/stacks'
+import { useGetComposeService, useListComposeStacks, useUpdateComposeStackService } from '@/hooks/stacks'
 import {
   ActionIcon,
   Box,
@@ -55,7 +55,7 @@ export default function Card({
   const { isRefetching: isLoadingParents } = useListComposeStacks({
     enabled: false, // no auto-fetch
   })
-  const { mutate, isMutating, lastMessage, messageHistory } = useUpdateComposeStackServiceWS(stackName, serviceName, { pruneImages: true })
+  const { mutate, isMutating, lastMessage, messageHistory } = useUpdateComposeStackService(stackName, serviceName, { pruneImages: true })
   const { data, refetch, isRefetching, isLoading } = useGetComposeService(stackName, serviceName, {
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
@@ -110,6 +110,11 @@ export default function Card({
       executionDetailsModalOpen()
     },
   }), [modals, data?.image.imageName])
+
+  // useEffect(() => {
+  //   if (!isMutating)
+  //     executionDetailsModalClose()
+  // }, [isMutating])
 
   useEffect(() => {
     loadingOverlayVisible

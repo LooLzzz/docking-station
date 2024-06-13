@@ -13,8 +13,7 @@ export const apiRoutes = {
   getComposeService: (stack: string, service: string) => `api/stacks/${stack}/${service}`,
 
   /** `POST` */
-  updateComposeStack: (stack: string) => `api/stacks/${stack}`,
-  /** `POST` */
-  updateComposeStackService: (stack: string, service: string) => `api/stacks/${stack}/${service}`,
-  updateComposeStackServiceWS: (stack: string, service: string) => `api/stacks/${stack}/${service}/ws`,
+  createUpdateComposeStackServiceTask: (stack: string, service: string) => `api/stacks/${stack}/${service}/task`,
+  /** `GET` */
+  pollUpdateComposeStackServiceTask: (stack: string, service: string) => `api/stacks/${stack}/${service}/task`,
 }

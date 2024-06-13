@@ -1,13 +1,15 @@
 import asyncio
 from logging import getLogger
+from threading import Thread
 
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 from fastapi_cache import FastAPICache
-from starlette.websockets import WebSocketDisconnect
 
 from ..schemas import (DockerContainerResponse, DockerStackResponse,
-                       DockerStackUpdateRequest, DockerStackUpdateResponse)
+                       DockerStackUpdateRequest, MessageDict,
+                       MessageDictResponse,
+                       StartComposeStackServiceUpdateTaskResponse)
 from ..services import docker as docker_services
 from ..settings import cache_key_builder, cached, get_app_settings
 
@@ -18,6 +20,7 @@ __all__ = [
 logger = getLogger(__name__)
 app_settings = get_app_settings()
 router = APIRouter()
+task_store: dict[tuple[str, str], tuple[Thread, asyncio.Queue[MessageDict]]] = {}
 
 
 @router.get('', tags=['[GET] Stacks'], response_model=list[DockerStackResponse])
@@ -60,12 +63,9 @@ async def get_compose_service_container(stack: str, service: str, no_cache: bool
         ) from exc
 
 
-@router.post('/{stack}/{service}', tags=['[UPDATE] Stacks'], response_model=DockerStackUpdateResponse)
-async def update_compose_stack_service(stack: str,
-                                       service: str,
-                                       request_body: DockerStackUpdateRequest = None):
-    request_body = request_body or DockerStackUpdateRequest()
-    resp = await docker_services.update_compose_stack(
+@router.post('/{stack}/{service}/task', tags=['[UPDATE] Stacks'], response_model=StartComposeStackServiceUpdateTaskResponse)
+async def start_compose_stack_service_update_task(stack: str, service: str, request_body: DockerStackUpdateRequest):
+    task_thread, message_queue = docker_services.update_compose_stack_ws(
         stack_name=stack,
         service_name=service,
         infer_envfile=request_body.infer_envfile,
@@ -73,57 +73,36 @@ async def update_compose_stack_service(stack: str,
         prune_images=request_body.prune_images,
     )
 
-    cache_backend = FastAPICache.get_backend()
-    key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
-    await cache_backend.clear(namespace=key)
-    return resp
+    if is_new_task := (stack, service) not in task_store:
+        task_store[(stack, service)] = (task_thread, message_queue)
+
+    return StartComposeStackServiceUpdateTaskResponse(
+        task_id=f'{stack}/{service}',
+        created=is_new_task,
+    )
 
 
-@router.websocket('/{stack}/{service}/ws')
-async def update_compose_stack_service(stack: str,
-                                       service: str,
-                                       websocket: WebSocket):
-    exc = None
+@router.get('/{stack}/{service}/task', tags=['[UPDATE] Stacks'], response_model=list[MessageDictResponse])
+async def get_compose_stack_service_update_task(stack: str, service: str):
+    if (stack, service) not in task_store:
+        return []
+
+    task_thread, message_queue = task_store[(stack, service)]
+    res: list[MessageDict] = []
 
     try:
-        await websocket.accept()
-        request_body = DockerStackUpdateRequest.model_validate(
-            await websocket.receive_json()
-        )
-
-        task_thread, message_queue = docker_services.update_compose_stack_ws(
-            stack_name=stack,
-            service_name=service,
-            infer_envfile=request_body.infer_envfile,
-            restart_containers=request_body.restart_containers,
-            prune_images=request_body.prune_images,
-        )
-
         while True:
-            try:
-                message = message_queue.get_nowait()
-                await websocket.send_json(message)
-            except asyncio.QueueEmpty:
-                if not task_thread.is_alive():
-                    task_thread.join()  # re-raise any exceptions from the task
-                    break
-            await asyncio.sleep(0.01)
+            res.append(
+                message_queue.get_nowait()
+            )
 
-    except WebSocketDisconnect:
-        """ignore"""
+    except asyncio.QueueEmpty:
+        if not task_thread.is_alive():
+            del task_store[(stack, service)]
+            cache_backend = FastAPICache.get_backend()
+            key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
+            await cache_backend.clear(namespace=key)
 
-    except Exception as _exc:
-        logger.exception('Error in websocket handler')
-        exc = _exc
+            task_thread.join()  # re-raise any exceptions from the task
 
-    if exc:
-        await websocket.close(
-            code=1011,
-            reason=str(exc),
-        )
-    else:
-        await websocket.close()
-
-    cache_backend = FastAPICache.get_backend()
-    key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
-    await cache_backend.clear(namespace=key)
+    return res

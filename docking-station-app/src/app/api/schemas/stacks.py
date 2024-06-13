@@ -11,6 +11,7 @@ __all__ = [
     'DockerStackRootModel',
     'DockerStackUpdateRequest',
     'DockerStackUpdateResponse',
+    'StartComposeStackServiceUpdateTaskResponse',
 ]
 
 
@@ -58,3 +59,8 @@ class DockerStackResponse(DockerStack):
 class DockerStackUpdateResponse(CamelCaseAliasedBaseModel):
     output: list[str]
     success: bool
+
+
+class StartComposeStackServiceUpdateTaskResponse(CamelCaseAliasedBaseModel):
+    task_id: str
+    created: bool
