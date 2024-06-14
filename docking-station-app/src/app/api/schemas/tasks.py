@@ -10,9 +10,9 @@ __all__ = [
 
 class MessageDict(TypedDict):
     stage: str
-    payload: NotRequired[None | str] = None
+    message: NotRequired[None | str] = None
 
 
 class MessageDictResponse(CamelCaseAliasedBaseModel):
     stage: str
-    payload: None | str = None
+    message: None | str = None

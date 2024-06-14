@@ -90,5 +90,5 @@ export interface DockerServiceUpdateResponse {
 
 export interface DockerServiceUpdateWsMessage {
   stage: string
-  payload: string
+  message: string
 }

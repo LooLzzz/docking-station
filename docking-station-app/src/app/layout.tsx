@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang='en'>
       <head>
-        <ColorSchemeScript />
+        <ColorSchemeScript defaultColorScheme='auto' />
       </head>
 
       <body className={inter.className}>

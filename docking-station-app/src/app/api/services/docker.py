@@ -358,8 +358,8 @@ def update_compose_stack_ws(stack_name: str,
             output.append(line)
             queue.put_nowait(
                 MessageDict(
-                    stage='compose up -d --pull always',
-                    payload=line,
+                    stage='docker compose up --pull always',
+                    message=line,
                 )
             )
 
@@ -372,14 +372,14 @@ def update_compose_stack_ws(stack_name: str,
                 queue.put_nowait(
                     MessageDict(
                         stage='docker image prune',
-                        payload=line,
+                        message=line,
                     )
                 )
 
         await queue.put(
             MessageDict(
                 stage='Finished',
-                # payload=output,
+                # message=output,
             )
         )
 

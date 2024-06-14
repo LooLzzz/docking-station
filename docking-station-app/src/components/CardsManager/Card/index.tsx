@@ -18,7 +18,7 @@ import {
   Tooltip,
   rem
 } from '@mantine/core'
-import { useDisclosure, useInterval } from '@mantine/hooks'
+import { useDisclosure, useInterval, usePrevious } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
 import {
   IconCalendarDown,
@@ -53,6 +53,9 @@ export default function Card({
 }: CardProps) {
   const { data: appSettings } = useAppSettings()
   const modalViewportRef = useRef<HTMLDivElement>(null)
+  const modalViewportPrevScrollHeight = usePrevious(modalViewportRef.current?.scrollHeight)
+  const modalViewportPrevClientHeight = usePrevious(modalViewportRef.current?.clientHeight)
+  const modalViewportPrevScrollTop = usePrevious(modalViewportRef.current?.scrollTop)
 
   const { isRefetching: isLoadingParents } = useListComposeStacks({
     enabled: false, // no auto-fetch
@@ -136,11 +139,12 @@ export default function Card({
   }, [modalViewportRef.current])
 
   useEffect(() => {
-    const { scrollHeight = 0, clientHeight = 0, scrollTop = 0 } = modalViewportRef.current ?? {}
     executionDetailsModalVisible
-      && scrollHeight - clientHeight - scrollTop < 250
+      && modalViewportPrevScrollHeight
+      && modalViewportPrevClientHeight
+      && modalViewportPrevScrollHeight - modalViewportPrevClientHeight - modalViewportPrevScrollTop! < 10
       && modalscrollToBottom()
-  }, [lastMessage, executionDetailsModalVisible, modalViewportRef.current])
+  }, [lastMessage, executionDetailsModalVisible, modalViewportPrevScrollHeight, modalViewportPrevClientHeight, modalViewportPrevScrollTop])
 
   const ModalScrollAreaComponent = useCallback((props: {}) => (
     <ScrollArea.Autosize
@@ -188,7 +192,7 @@ export default function Card({
                 ? <>
                   <Center>Updates available</Center>
                   {data?.image?.latestVersion ? <Center>{`Version ${data?.image?.latestVersion}`}</Center> : null}
-                  <Center>{releaseStatus} {isReleaseMature ? '[Matured]' : '[Not-matured]'}</Center>
+                  <Center>{releaseStatus} {isReleaseMature ? '[Matured]' : '[Not-Matured]'}</Center>
                 </>
                 : 'Up to date'
             }
