@@ -5,6 +5,13 @@ import {
 
 
 export const themeOverride: MantineThemeOverride = {
+  breakpoints: {
+    xxs: '15em',
+    md: '66em',
+    xxl: '120em',
+    xxxl: '150em',
+  },
+
   components: {
     Tooltip: Tooltip.extend({
       defaultProps: {

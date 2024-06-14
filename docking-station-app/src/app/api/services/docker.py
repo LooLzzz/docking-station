@@ -36,34 +36,40 @@ async def list_containers(filters: DockerContainerListFilters = None,
     async def _task(container: WhalesContainer):
         nonlocal no_cache
 
-        image_tag = (container.config.image.split('@', 1)[0]
-                                           .removeprefix('registry.hub.docker.com/')
-                                           .removeprefix('library/'))
-        image = await get_image(
-            repository_or_tag=image_tag,
-            no_cache=no_cache,
-        )
-
-        return DockerContainer(
+        res = DockerContainer(
             id=container.id,
             created_at=container.created,
             uptime=datetime.now(container.state.started_at.tzinfo) - container.state.started_at,
-            image=image,
+            image=None,
             labels=container.config.labels,
             name=container.name,
             ports=container.network_settings.ports,
             status=container.state.status,
         )
 
+        if not res.dockingstation_enabled:
+            return None
+
+        image_tag = (container.config.image.split('@', 1)[0]
+                                           .removeprefix('registry.hub.docker.com/')
+                                           .removeprefix('library/'))
+        res.image = await get_image(
+            repository_or_tag=image_tag,
+            no_cache=no_cache,
+        )
+        return res
+
     _containers = docker.container.list(
         all=include_stopped,
         filters=filters or {},
     )
-    containers = await asyncio.gather(*[
-        _task(item)
-        for item in _containers
-        if not item.config.labels.get(app_settings.server.ignore_label_field_name, False)
-    ])
+    containers = list(filter(
+        lambda x: x is not None,
+        await asyncio.gather(*[
+            _task(item)
+            for item in _containers
+        ])
+    ))
 
     return sorted(
         containers,
@@ -163,6 +169,11 @@ async def list_compose_stacks(filters: DockerContainerListFilters = None,
         for stack in _stacks
         if not app_settings.server.ignore_compose_stack_name_pattern.search(stack.name)
     ])
+    stacks = [
+        stack
+        for stack in stacks
+        if stack.services
+    ]
 
     return sorted(
         stacks,

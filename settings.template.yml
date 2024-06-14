@@ -1,6 +1,7 @@
 
 server:
   cache_control_max_age: 1d
+  discovery_strategy: opt-out
   dryrun: false
   ignore_compose_stack_name_keywords:
     - devcontainer

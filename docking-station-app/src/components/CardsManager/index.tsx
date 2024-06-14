@@ -46,7 +46,7 @@ export default function CardsManager() {
 
   return (
     <div>
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3, xl: 4, xxxl: 5 }}>
         {
           services.map(({ stackName, serviceName }) => (
             <Card
@@ -54,7 +54,7 @@ export default function CardsManager() {
               stackName={stackName!}
               serviceName={serviceName!}
               className={classes.item}
-              miw={rem(300)}
+              miw={rem(325)}
               mih={rem(150)}
             />
           ))
@@ -65,7 +65,7 @@ export default function CardsManager() {
           <EmptyCard
             loading={isFetching}
             className={classes.item}
-            miw={rem(300)}
+            miw={rem(325)}
             mih={rem(150)}
           />
         }

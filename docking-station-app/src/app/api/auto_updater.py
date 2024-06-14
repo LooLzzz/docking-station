@@ -63,7 +63,7 @@ async def main():
         stacks = await list_docker_stacks()
         for stack in stacks:
             for service in stack.services:
-                if service.has_updates and not service.dockingstation_ignore:
+                if service.has_updates and service.dockingstation_enabled:
                     services_to_update.append(service)
 
         if services_to_update:

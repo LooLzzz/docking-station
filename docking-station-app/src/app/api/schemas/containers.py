@@ -24,7 +24,7 @@ class DockerContainer(AliasedBaseModel):
     id: str
     created_at: datetime
     uptime: str | timedelta
-    image: DockerImage
+    image: DockerImage | None
     labels: dict[str, str]
     name: str
     ports: dict[str, list[DockerContainerPort] | None]
@@ -51,8 +51,9 @@ class DockerContainer(AliasedBaseModel):
         return f'Up {value.seconds} second{plural}'
 
     @property
-    def dockingstation_ignore(self):
-        return self.labels.get(app_settings.server.ignore_label_field_name, False)
+    def dockingstation_enabled(self):
+        is_opt_out_strategy = str(app_settings.server.discovery_strategy.is_opt_out()).lower()
+        return self.labels.get(app_settings.server.enabled_label_field_name, is_opt_out_strategy) == 'true'
 
     @computed_field
     @property

@@ -1,4 +1,5 @@
 import re
+from enum import StrEnum
 from functools import lru_cache
 from typing import Literal, Tuple
 
@@ -13,6 +14,17 @@ __all__ = [
     'AppSettings',
     'get_app_settings',
 ]
+
+
+class DiscoverStrategyEnum(StrEnum):
+    OPT_IN = 'opt-in'
+    OPT_OUT = 'opt-out'
+
+    def is_opt_in(self):
+        return self is self.OPT_IN
+
+    def is_opt_out(self):
+        return self is self.OPT_OUT
 
 
 class AutoUpdaterSettings(BaseSettings, CamelCaseAliasedBaseModel):
@@ -31,9 +43,10 @@ class ServerSettings(BaseSettings, CamelCaseAliasedBaseModel):
     model_config = SettingsConfigDict(env_prefix='SERVER_')
 
     cache_control_max_age: Interval = '1d'
+    discovery_strategy: DiscoverStrategyEnum = DiscoverStrategyEnum.OPT_OUT
     dryrun: bool = False
+    enabled_label_field_name: str = 'com.loolzzz.docking-station.enabled'
     ignore_compose_stack_name_keywords: list[str] = Field(default_factory=lambda: ['devcontainer'])
-    ignore_label_field_name: str = 'com.loolzzz.docking-station.ignore'
     possible_homepage_labels: list[str] = Field(default_factory=lambda: ['org.label-schema.url',
                                                                          'org.opencontainers.image.url',
                                                                          'org.opencontainers.image.source'])
