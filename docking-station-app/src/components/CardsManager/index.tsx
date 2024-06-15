@@ -1,19 +1,23 @@
 'use client'
 
+import { useAppSettings } from '@/hooks'
 import { useListComposeStacks } from '@/hooks/stacks'
 import { useFiltersStore } from '@/store'
 import { escapeRegExp } from '@/utils'
-import { SimpleGrid, rem } from '@mantine/core'
+import { SimpleGrid, rem, useComputedColorScheme } from '@mantine/core'
 import { useMemo } from 'react'
 import Card from './Card'
 import classes from './CardManager.module.css'
 import EmptyCard from './EmptyCard'
 
 export default function CardsManager() {
-  const { updatesOnly, searchValue } = useFiltersStore(state => ({
-    updatesOnly: state.updatesOnly,
-    searchValue: state.searchValue,
-  }))
+  const colorScheme = useComputedColorScheme()
+  const { appSettings } = useAppSettings()
+  const {
+    maturedUpdatesOnly,
+    searchValue,
+    updatesOnly,
+  } = useFiltersStore()
   const { data = [], isFetching } = useListComposeStacks()
 
   const services = useMemo(() => (
@@ -33,6 +37,18 @@ export default function CardsManager() {
           flag &&= service.hasUpdates
         }
 
+        if (maturedUpdatesOnly) {
+          if (!service?.hasUpdates || !appSettings?.server?.timeUntilUpdateIsMature)
+            flag &&= false
+
+          const latestUpdateTimestampSeconds = (
+            service?.image?.latestUpdate
+              ? (Date.now() - service?.image?.latestUpdate.getTime()) * 0.001
+              : 0
+          )
+          flag &&= latestUpdateTimestampSeconds >= (appSettings?.server.timeUntilUpdateIsMature ?? 0)
+        }
+
         if (searchValue) {
           flag &&= [
             service.stackName?.match(new RegExp(escapeRegExp(searchValue), 'i')),
@@ -42,7 +58,7 @@ export default function CardsManager() {
 
         return flag
       })
-  ), [data, updatesOnly, searchValue])
+  ), [data, updatesOnly, searchValue, maturedUpdatesOnly])
 
   return (
     <div>
@@ -53,6 +69,7 @@ export default function CardsManager() {
               key={`${stackName}/${serviceName}`}
               stackName={stackName!}
               serviceName={serviceName!}
+              bg={colorScheme === 'light' ? 'gray.1' : undefined}
               className={classes.item}
               miw={rem(325)}
               mih={rem(150)}
@@ -64,6 +81,7 @@ export default function CardsManager() {
           !services?.length &&
           <EmptyCard
             loading={isFetching}
+            bg={colorScheme === 'light' ? 'gray.1' : undefined}
             className={classes.item}
             miw={rem(325)}
             mih={rem(150)}

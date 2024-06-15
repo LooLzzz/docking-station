@@ -1,20 +1,31 @@
 import { useFiltersStore } from '@/store'
-import { Group, Card as MantineCard, Stack, Switch } from '@mantine/core'
+import { Card as MantineCard, Stack, Switch, type CardProps as MantineCardProps } from '@mantine/core'
 
-export default function SearchBar() {
-  const { updatesOnly, toggleUpdatesOnlyFilter } = useFiltersStore()
+interface FiltersPaneProps extends MantineCardProps { }
+
+export default function FiltersPane({ ...props }: FiltersPaneProps) {
+  const {
+    maturedUpdatesOnly,
+    toggleMaturedUpdatesOnlyFilter,
+    toggleUpdatesOnlyFilter,
+    updatesOnly,
+  } = useFiltersStore()
 
   return (
-    <MantineCard>
+    <MantineCard bg='inherit' {...props}>
       <Stack gap='md'>
-        <Group>
-          <Switch
-            size='sm'
-            label='Only show services with updates'
-            checked={updatesOnly}
-            onChange={toggleUpdatesOnlyFilter}
-          />
-        </Group>
+        <Switch
+          size='sm'
+          label='Only show services with updates'
+          checked={updatesOnly}
+          onChange={toggleUpdatesOnlyFilter}
+        />
+        <Switch
+          size='sm'
+          label='Only show matured updates'
+          checked={maturedUpdatesOnly}
+          onChange={toggleMaturedUpdatesOnlyFilter}
+        />
       </Stack>
     </MantineCard>
   )

@@ -35,11 +35,11 @@
       "request": "launch",
       "command": "bun run next-dev",
       "cwd": "${workspaceFolder}/docking-station-app",
-      "serverReadyAction": {
-        "pattern": "- Local:.+(https?://.+)",
-        "uriFormat": "%s",
-        "action": "debugWithChrome"
-      }
+      // "serverReadyAction": {
+      //   "pattern": "- Local:.+(https?://.+)",
+      //   "uriFormat": "%s",
+      //   "action": "debugWithChrome"
+      // }
     },
   ]
 }

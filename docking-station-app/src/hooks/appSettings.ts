@@ -5,7 +5,7 @@ import { UseQueryOptions, useQuery } from 'react-query'
 
 
 export const useAppSettings = <TData extends AppSettings>(options: UseQueryOptions<TData> = {}) => {
-  return useQuery<TData>(
+  const { data, ...rest } = useQuery<TData>(
     ['appSettings'],
     async ({ queryKey }) => {
       const { data } = await axios.get<TData>(apiRoutes.getAppSettings)
@@ -17,4 +17,9 @@ export const useAppSettings = <TData extends AppSettings>(options: UseQueryOptio
       ...options,
     }
   )
+
+  return {
+    appSettings: data,
+    ...rest,
+  }
 }

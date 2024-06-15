@@ -182,7 +182,7 @@ export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWs
 
   const mutate = async () => {
     queryClient.invalidateQueries(['stacks', 'task', stackName, serviceName])
-    setMessageHistory([{ stage: 'Connecting...', message: null } as any])
+    setMessageHistory([{ stage: 'Connecting', message: null } as any])
     setEnabled(true)
   }
 

@@ -33,7 +33,8 @@
                 "qwtel.sqlite-viewer",
                 "rangav.vscode-thunder-client",
                 "richie5um2.vscode-sort-json",
-                "wmaurer.change-case"
+                "wmaurer.change-case",
+                "YoavBls.pretty-ts-errors"
             ]
         }
     },

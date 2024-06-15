@@ -16,12 +16,14 @@ import {
   Text,
   Title,
   Tooltip,
-  rem
+  rem,
+  type CardProps as MantineCardProps,
 } from '@mantine/core'
 import { useDisclosure, useInterval, usePrevious } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
 import {
-  IconCalendarDown,
+  IconCalendarEvent,
+  IconCalendarUp,
   IconCheck,
   IconCloudDownload,
   IconExclamationCircle,
@@ -35,23 +37,18 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ExecutionDetails from './ExecutionDetails'
 
-interface CardProps {
+interface CardProps extends MantineCardProps {
   stackName: string
   serviceName: string
-  miw?: string
-  mih?: string
-  className?: string
 }
 
 
 export default function Card({
-  miw,
-  mih,
-  className,
   stackName,
   serviceName,
+  ...props
 }: CardProps) {
-  const { data: appSettings } = useAppSettings()
+  const { appSettings } = useAppSettings()
   const modalViewportRef = useRef<HTMLDivElement>(null)
   const modalViewportPrevScrollHeight = usePrevious(modalViewportRef.current?.scrollHeight)
   const modalViewportPrevClientHeight = usePrevious(modalViewportRef.current?.clientHeight)
@@ -101,6 +98,12 @@ export default function Card({
     return `${daysAgo} days ago`
   }, [data?.hasUpdates, data?.image?.latestUpdate])
 
+  const isModalViewportAtBottom = useMemo(() => Boolean(
+    modalViewportPrevScrollHeight
+    && modalViewportPrevClientHeight
+    && modalViewportPrevScrollHeight - modalViewportPrevClientHeight - modalViewportPrevScrollTop! < 10
+  ), [modalViewportPrevScrollHeight, modalViewportPrevClientHeight, modalViewportPrevScrollTop])
+
   const openMutateConfirmModal = useCallback(() => modals.openConfirmModal({
     centered: true,
     title: 'Confirm Update Service Action',
@@ -116,10 +119,16 @@ export default function Card({
     },
   }), [modals, data?.image.imageName])
 
-  // useEffect(() => {
-  //   if (!isMutating)
-  //     executionDetailsModalClose()
-  // }, [isMutating])
+  const modalscrollToBottom = useCallback(() => {
+    modalViewportRef.current?.scrollTo({
+      top: modalViewportRef.current?.scrollHeight,
+    })
+  }, [modalViewportRef.current])
+
+  useEffect(() => {
+    if (!isMutating && isModalViewportAtBottom)
+      executionDetailsModalClose()
+  }, [isMutating])
 
   useEffect(() => {
     loadingOverlayVisible
@@ -132,163 +141,160 @@ export default function Card({
       && setSeconds(0)
   }, [interval?.active, setSeconds])
 
-  const modalscrollToBottom = useCallback(() => {
-    modalViewportRef.current?.scrollTo({
-      top: modalViewportRef.current?.scrollHeight,
-    })
-  }, [modalViewportRef.current])
-
   useEffect(() => {
     executionDetailsModalVisible
-      && modalViewportPrevScrollHeight
-      && modalViewportPrevClientHeight
-      && modalViewportPrevScrollHeight - modalViewportPrevClientHeight - modalViewportPrevScrollTop! < 10
+      && isModalViewportAtBottom
       && modalscrollToBottom()
-  }, [lastMessage, executionDetailsModalVisible, modalViewportPrevScrollHeight, modalViewportPrevClientHeight, modalViewportPrevScrollTop])
+  }, [lastMessage, executionDetailsModalVisible, isModalViewportAtBottom])
 
-  const ModalScrollAreaComponent = useCallback((props: {}) => (
-    <ScrollArea.Autosize
+  const ModalScrollAreaComponent = useCallback((props: any) => (
+    <ScrollArea
       {...props}
       viewportRef={modalViewportRef}
+      h='100vh'
       type='auto'
     />
   ), [modalViewportRef])
 
   return (
-    <>
-      <Modal
-        centered
-        radius='lg'
-        padding={25}
-        opened={executionDetailsModalVisible}
-        onClose={executionDetailsModalClose}
-        size='xl'
-        title={<Title order={2} fw='bold'>Execution Details</Title>}
-        scrollAreaComponent={ModalScrollAreaComponent}
+    <MantineCard
+      withBorder
+      pos='relative'
+      padding='lg'
+      radius='md'
+      {...props}
+    >
+      <Group
+        pos='absolute'
+        top={18}
+        right={18}
+        gap={5}
+        wrap='nowrap'
       >
-        <ExecutionDetails messageHistory={messageHistory} />
-      </Modal>
-
-      <MantineCard
-        withBorder
-        pos='relative'
-        miw={miw}
-        mih={mih}
-        padding='lg'
-        radius='md'
-        className={className}
-      >
-        <Group
-          pos='absolute'
-          top={18}
-          right={18}
-          gap={5}
-          wrap='nowrap'
+        <Tooltip
+          withArrow
+          label={
+            data?.hasUpdates
+              ? <>
+                <Center>Updates available</Center>
+                {data?.image?.latestVersion ? <Center>{`Version ${data?.image?.latestVersion}`}</Center> : null}
+                <Center>{releaseStatus} {isReleaseMature ? '[Matured]' : '[Not-Matured]'}</Center>
+              </>
+              : 'Up to date'
+          }
         >
+          {
+            data?.hasUpdates
+              ? <IconExclamationCircle color={
+                isReleaseMature
+                  ? '#4fb2ff'
+                  : '#ffab00'
+              } />
+              : <IconCheck color='#1ed760' />
+          }
+        </Tooltip>
+
+        {
+          data?.hasUpdates &&
           <Tooltip
             withArrow
-            label={
-              data?.hasUpdates
-                ? <>
-                  <Center>Updates available</Center>
-                  {data?.image?.latestVersion ? <Center>{`Version ${data?.image?.latestVersion}`}</Center> : null}
-                  <Center>{releaseStatus} {isReleaseMature ? '[Matured]' : '[Not-Matured]'}</Center>
-                </>
-                : 'Up to date'
-            }
+            label='Update Service'
+            events={{
+              hover: true,
+              focus: false,
+              touch: false,
+            }}
           >
-            {
-              data?.hasUpdates
-                ? <IconExclamationCircle color={
-                  isReleaseMature
-                    ? '#4fb2ff'
-                    : '#ffab00'
-                } />
-                : <IconCheck color='#1ed760' />
-            }
-          </Tooltip>
-
-          {
-            data?.hasUpdates &&
-            <Tooltip
-              withArrow
-              label='Update Service'
-              events={{
-                hover: true,
-                focus: false,
-                touch: false,
-              }}
-            >
-              <ActionIcon
-                color='gray'
-                variant='transparent'
-                onClick={() => openMutateConfirmModal()}
-              >
-                <IconCloudDownload
-                  size={20}
-                  stroke={2.5}
-                />
-              </ActionIcon>
-            </Tooltip>
-          }
-
-          <Tooltip withArrow label='Refresh'>
             <ActionIcon
               color='gray'
               variant='transparent'
-              onClick={() => refetch()}
+              onClick={() => openMutateConfirmModal()}
             >
-              <IconRefresh
+              <IconCloudDownload
                 size={20}
                 stroke={2.5}
               />
             </ActionIcon>
           </Tooltip>
+        }
+
+        <Tooltip withArrow label='Refresh'>
+          <ActionIcon
+            color='gray'
+            variant='transparent'
+            onClick={() => refetch()}
+          >
+            <IconRefresh
+              size={20}
+              stroke={2.5}
+            />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+
+      <Stack gap={5}>
+        <Group wrap='nowrap'>
+          <Tooltip withArrow label='Container name'>
+            <IconExternalLink
+              size={16}
+              stroke={2.5}
+              color='gray'
+            />
+          </Tooltip>
+          <Text
+            component='a'
+            title={data?.name}
+            href={data?.homepageUrl}
+            target='_blank'
+            truncate='end'
+            fw='bold'
+            maw={rem(data?.hasUpdates ? 160 : 190)}
+          >
+            {data?.name}
+          </Text>
         </Group>
 
-        <Stack gap={5}>
-          <Group wrap='nowrap'>
-            <Tooltip withArrow label='Container name'>
-              <IconExternalLink
-                size={16}
-                stroke={2.5}
-                color='gray'
-              />
-            </Tooltip>
-            <Text
-              component='a'
-              title={data?.name}
-              href={data?.homepageUrl}
-              target='_blank'
-              truncate='end'
-              fw='bold'
-              maw={rem(data?.hasUpdates ? 160 : 190)}
-            >
-              {data?.name}
-            </Text>
-          </Group>
+        <Group wrap='nowrap'>
+          <Tooltip withArrow label='Stack name'>
+            <IconStack2
+              color='gray'
+              size={16}
+              stroke={2.5}
+            />
+          </Tooltip>
+          <Text
+            style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+            w={rem(250)}
+            truncate='end'
+            title={data?.stackName}
+          >
+            {data?.stackName}
+          </Text>
+        </Group>
 
-          <Group wrap='nowrap'>
-            <Tooltip withArrow label='Stack name'>
-              <IconStack2
-                color='gray'
-                size={16}
-                stroke={2.5}
-              />
-            </Tooltip>
-            <Text
-              style={{ fontSize: 'var(--mantine-h6-font-size)' }}
-              w={rem(250)}
-              truncate='end'
-              title={data?.stackName}
-            >
-              {data?.stackName}
-            </Text>
-          </Group>
+        <Group wrap='nowrap'>
+          <Tooltip withArrow label='Image'>
+            <IconTag
+              color='gray'
+              size={16}
+              stroke={2.5}
+            />
+          </Tooltip>
+          <Text
+            style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+            w={rem(250)}
+            truncate='end'
+            title={`${data?.image.imageName}:${data?.image.imageTag}`}
+          >
+            {`${data?.image.imageName}:${data?.image.imageTag}`}
+          </Text>
+        </Group>
 
+        {
+          data?.image.version &&
           <Group wrap='nowrap'>
-            <Tooltip withArrow label='Image'>
-              <IconTag
+            <Tooltip withArrow label='Version'>
+              <IconVersions
                 color='gray'
                 size={16}
                 stroke={2.5}
@@ -298,35 +304,15 @@ export default function Card({
               style={{ fontSize: 'var(--mantine-h6-font-size)' }}
               w={rem(250)}
               truncate='end'
-              title={`${data?.image.imageName}:${data?.image.imageTag}`}
             >
-              {`${data?.image.imageName}:${data?.image.imageTag}`}
+              {data?.image.version}
             </Text>
           </Group>
+        }
 
-          {
-            data?.image.version &&
-            <Group wrap='nowrap'>
-              <Tooltip withArrow label='Version'>
-                <IconVersions
-                  color='gray'
-                  size={16}
-                  stroke={2.5}
-                />
-              </Tooltip>
-              <Text
-                style={{ fontSize: 'var(--mantine-h6-font-size)' }}
-                w={rem(250)}
-                truncate='end'
-              >
-                {data?.image.version}
-              </Text>
-            </Group>
-          }
-
-          {/* <Group wrap='nowrap'>
+        <Group wrap='nowrap'>
           <Tooltip withArrow label='Uptime'>
-            <IconCalendar
+            <IconCalendarUp
               color='gray'
               size={16}
               stroke={2.5}
@@ -339,64 +325,84 @@ export default function Card({
           >
             {data?.uptime}
           </Text>
-        </Group> */}
+        </Group>
 
-          <Group wrap='nowrap'>
-            <Tooltip withArrow label='Local image date'>
-              <IconCalendarDown
-                color='gray'
-                size={16}
-                stroke={2.5}
-              />
-            </Tooltip>
-            <Text
-              style={{ fontSize: 'var(--mantine-h6-font-size)' }}
-              w={rem(250)}
-              truncate='end'
+        <Group wrap='nowrap'>
+          <Tooltip withArrow label='Local image date'>
+            <IconCalendarEvent
+              color='gray'
+              size={16}
+              stroke={2.5}
+            />
+          </Tooltip>
+          <Text
+            style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+            w={rem(250)}
+            truncate='end'
+          >
+            {data?.image?.createdAt?.toLocaleDateString()}
+          </Text>
+        </Group>
+
+      </Stack>
+
+      <LoadingOverlay
+        visible={loadingOverlayVisible}
+        overlayProps={{
+          blur: 1,
+          children: (
+            <Stack align='center' justify='center' h='100%' gap={45}>
+              <Text>
+                {lastMessage ? lastMessage.stage : ''}
+              </Text>
+              <Text pt={lastMessage ? undefined : 25}>
+                {`${seconds.toFixed(1)}s`}
+              </Text>
+            </Stack>
+          ),
+        }}
+      />
+
+      {
+        messageHistory.length > 0 &&
+        (
+          <>
+            <Modal
+              centered
+              size='xl'
+              radius='lg'
+              opened={executionDetailsModalVisible}
+              onClose={executionDetailsModalClose}
+              title={<Title order={2} fw='bold'>Execution Details</Title>}
+              scrollAreaComponent={ModalScrollAreaComponent}
             >
-              {data?.image?.createdAt?.toLocaleDateString()}
-            </Text>
-          </Group>
+              <ExecutionDetails
+                messageHistory={messageHistory}
+                style={{
+                  width: 'min(83vw, 45rem)'  // yay magic numbers (not 🤦‍♂️)
+                }}
+              />
+            </Modal>
 
-        </Stack>
-
-        <LoadingOverlay
-          visible={loadingOverlayVisible}
-          overlayProps={{
-            blur: 1,
-            children: (
-              <Stack align='center' justify='center' h='100%' gap={45}>
-                <Text>
-                  {lastMessage ? lastMessage.stage : ''}
-                </Text>
-                <Text pt={lastMessage ? undefined : 25}>
-                  {`${seconds.toFixed(1)}s`}
-                </Text>
-              </Stack>
-            ),
-          }}
-        />
-
-        {
-          messageHistory.length > 0 &&
-          <Box pos='absolute' bottom={12.5} right={20} style={{ zIndex: 999 }}>
-            <Tooltip withArrow label='Execution Details' events={{
-              hover: true,
-              focus: false,
-              touch: false,
-            }}>
-              <ActionIcon
-                size='sm'
-                color='gray.5'
-                variant='transparent'
-                onClick={() => executionDetailsModalOpen()}
-              >
-                <IconListDetails />
-              </ActionIcon>
-            </Tooltip>
-          </Box>
-        }
-      </MantineCard>
-    </>
+            <Box pos='absolute' bottom={12.5} right={20} style={{ zIndex: 999 }}>
+              <Tooltip withArrow label='Execution Details' events={{
+                hover: true,
+                focus: false,
+                touch: false,
+              }}>
+                <ActionIcon
+                  size='sm'
+                  color='gray.5'
+                  variant='transparent'
+                  onClick={() => executionDetailsModalOpen()}
+                >
+                  <IconListDetails />
+                </ActionIcon>
+              </Tooltip>
+            </Box>
+          </>
+        )
+      }
+    </MantineCard>
   )
 }

@@ -1,28 +1,28 @@
-import { Center, LoadingOverlay, Card as MantineCard, Text } from '@mantine/core'
+import {
+  Center,
+  LoadingOverlay,
+  Card as MantineCard,
+  Text,
+  type CardProps as MantineCardProps,
+} from '@mantine/core'
 import localFont from 'next/font/local'
-
-interface EmptyCardProps {
-  loading?: boolean
-  className?: string
-  miw?: string
-  mih?: string
-}
 
 const determinationMonoFont = localFont({ src: 'DeterminationMonoWeb.ttf' })
 
+interface EmptyCardProps extends MantineCardProps {
+  loading?: boolean
+}
+
+
 export default function EmptyCard({
   loading = false,
-  className,
-  miw,
-  mih,
+  ...props
 }: EmptyCardProps) {
   return (
     <MantineCard
       withBorder
-      className={className}
-      miw={miw}
-      mih={mih}
       radius='md'
+      {...props}
     >
       <Center h='100%'>
         {

@@ -25,7 +25,8 @@
     "react-query": "^3.39.3",
     "react-use-websocket": "^4.8.1",
     "sharp": "^0.33.4",
-    "zustand": "^4.5.0"
+    "zustand": "^4.5.0",
+    "zustand-computed": "^1.4.1"
   },
   "devDependencies": {
     "@types/node": "^20",

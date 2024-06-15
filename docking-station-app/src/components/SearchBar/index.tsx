@@ -6,18 +6,24 @@ import { useDebouncedState, useWindowEvent } from '@mantine/hooks'
 import { IconFilter, IconFilterFilled, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import FiltersPane from './FiltersPane'
+import classes from './SearchBar.module.css'
+
 
 export default function SearchBar() {
   const textInputRef = useRef<HTMLInputElement>(null)
   const colorScheme = useComputedColorScheme()
-  const { searchValue, updatesOnly, setSearchValue } = useFiltersStore()
+  const {
+    searchValue,
+    isFiltersActive,
+    setSearchValue
+  } = useFiltersStore()
   const [searchValueDebounced, setSearchValueDebounced] = useDebouncedState(searchValue, 150)
 
   const ComputedIconFilter = useMemo(() => (
-    (searchValue || updatesOnly)
+    isFiltersActive
       ? IconFilterFilled
       : IconFilter
-  ), [searchValue, updatesOnly])
+  ), [isFiltersActive])
 
   const windowKeydownHandler = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -46,8 +52,10 @@ export default function SearchBar() {
         rightSectionWidth={42}
         maw={rem(600)}
         w='100%'
-
         onChange={(event) => setSearchValueDebounced(event.currentTarget.value)}
+        classNames={{
+          input: classes.input,
+        }}
 
         leftSection={
           <IconSearch
@@ -59,7 +67,7 @@ export default function SearchBar() {
           />}
 
         rightSection={
-          <Popover withArrow arrowSize={20} shadow='md' radius='lg'>
+          <Popover withArrow shadow='md' radius='lg'>
             <Popover.Target>
               <ActionIcon
                 size={32}
@@ -76,7 +84,10 @@ export default function SearchBar() {
                 />
               </ActionIcon>
             </Popover.Target>
-            <Popover.Dropdown p={5}>
+            <Popover.Dropdown
+              p={5}
+              bg={colorScheme === 'dark' ? '#353535' : undefined}
+            >
               <FiltersPane />
             </Popover.Dropdown>
           </Popover>

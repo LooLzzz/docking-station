@@ -1,4 +1,5 @@
-export { useAppSettingsStore } from './appSettings'
 export type { AppSettingsStore } from './appSettings'
+export type { FiltersStore, FiltersStoreComputed } from './filters'
+
+export { useAppSettingsStore } from './appSettings'
 export { useFiltersStore } from './filters'
-export type { FiltersStore } from './filters'
