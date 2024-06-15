@@ -148,10 +148,9 @@ export default function Card({
   }, [lastMessage, executionDetailsModalVisible, isModalViewportAtBottom])
 
   const ModalScrollAreaComponent = useCallback((props: any) => (
-    <ScrollArea
+    <ScrollArea.Autosize
       {...props}
       viewportRef={modalViewportRef}
-      h='100vh'
       type='auto'
     />
   ), [modalViewportRef])
