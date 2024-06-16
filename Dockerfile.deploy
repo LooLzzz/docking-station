@@ -4,15 +4,12 @@ FROM node:18-alpine AS base
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
-RUN apk add --no-cache libc6-compat
-
-# install bun
-RUN curl -fsSL https://bun.sh/install | sh
+RUN apk add --no-cache libc6-compat unzip \
+    && curl -fsSL https://bun.sh/install | sh
 
 # Install dependencies based on the preferred package manager
 COPY docking-station-app/package.json docking-station-app/package-lock.json ./
 RUN npm install
-
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -42,21 +39,26 @@ EXPOSE ${WEB_PORT}
 EXPOSE ${SERVER_PORT}
 USER root
 
-# install npm and unzip
-# install docker
-# install regctl: https://github.com/regclient/regclient
-# install concurrently package for running multiple commands: https://www.npmjs.com/package/concurrently
-# cleanup
-RUN apt-get update \
-    && export DEBIAN_FRONTEND=noninteractive \
-    && export PYTHONDONTWRITEBYTECODE=1 \
-    && apt-get -y install --no-install-recommends npm unzip curl \
-    && curl -fsSL https://get.docker.com | bash \
-    && curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/bin/regctl \
-    && chmod 755 /usr/bin/regctl \
-    && npm install -g concurrently next \
+# get unzip tool for extracting regctl
+COPY --from=builder /usr/bin/unzip /usr/bin/unzip
+# COPY --from=builder /usr/local/lib/node_modules/concurrently/dist/bin /usr/local/lib/node_modules/concurrently/dist/bin
+# COPY --from=builder /usr/local/bin/concurrently /usr/local/bin/concurrently
+
+# install node
+# install curl
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends npm curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# install concurrently package for running multiple commands: https://www.npmjs.com/package/concurrently
+# install docker
+# install regctl: https://github.com/regclient/regclient
+RUN npm install --g concurrently \
+    && curl -fsSL https://get.docker.com | bash \
+    && curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/bin/regctl \
+    && chmod 755 /usr/bin/regctl
 
 RUN mkdir -p /app/docking-station-app/.next \
     && mkdir -p /app/logs /app/config /app/data \
@@ -67,7 +69,8 @@ RUN mkdir -p /app/docking-station-app/.next \
 # Install python dependencies
 COPY ./docking-station-app/requirements.txt /app/docking-station-app/requirements.txt
 COPY ./docking-station-app/src/app/api /app/docking-station-app/src/app/api
-RUN python3 -m pip install --no-cache-dir -r /app/docking-station-app/requirements.txt
+RUN export PYTHONDONTWRITEBYTECODE=1 \
+    && python3 -m pip install --no-cache-dir -r /app/docking-station-app/requirements.txt
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
