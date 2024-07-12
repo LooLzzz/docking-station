@@ -54,6 +54,8 @@ Swagger UI documentation is available at `/docs`
 
 ## Screenshots
 
+[video.webm](https://github.com/user-attachments/assets/589b6b21-bfd9-4666-bb13-f1bb25431fe2)
+
 ![screenshot_1](./docs/images/screenshot_1.png)
 ![screenshot_2](./docs/images/screenshot_2.png)
 
