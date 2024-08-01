@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0](https://github.com/LooLzzz/docking-station/compare/v0.1.0...v0.1.0) (2024-08-01)
+
+
+### Miscellaneous Chores
+
+* release 0.1.0 ([4ff05eb](https://github.com/LooLzzz/docking-station/commit/4ff05ebdbf3d50e5b4a50e8a6665f045bbef5362))
+
 ## 0.1.0 (2024-08-01)
 
 
