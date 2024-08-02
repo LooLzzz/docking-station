@@ -1,7 +1,6 @@
 'use client'
 
-import DockingStationSolidGray from '@/public/dockingstation-solid-gray.png'
-import DockingStationSolidWhite from '@/public/dockingstation-solid-white.png'
+import DockingStationLogo from '@/public/dockingstation-solid-black.svg'
 
 import { SearchBar } from '@/components'
 import { useListComposeStacks } from '@/hooks/stacks'
@@ -18,7 +17,6 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
-import Image from 'next/image'
 
 const SunIcon = () => {
   const theme = useMantineTheme()
@@ -58,9 +56,8 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
       <AppShell.Header>
         <Container h='100%' size={1375}>
           <Group h='100%' justify='space-between' wrap='nowrap'>
-            {/* TODO: get an original icon */}
-            <Image
-              src={colorScheme === 'dark' ? DockingStationSolidWhite : DockingStationSolidGray}
+            <DockingStationLogo
+              fill={colorScheme === 'dark' ? '#ffffff' : '#242424'}
               alt='Docker Logo'
               width={75}
               height={75}

@@ -3,3 +3,7 @@
 /app
 
 !.devcontainer/.env
+
+# pwa
+**/public/sw*
+**/public/workbox*

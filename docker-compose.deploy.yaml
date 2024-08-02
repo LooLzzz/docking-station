@@ -4,4 +4,4 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.deploy
-    image: loolzzz/docking-station
+    # image: docking-station
