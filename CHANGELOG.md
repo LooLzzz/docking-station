@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/LooLzzz/docking-station/compare/v0.1.0...v0.2.0) (2024-08-02)
+
+
+### Features
+
+* enable nextjs pwa ([71ee9c8](https://github.com/LooLzzz/docking-station/commit/71ee9c8e4a5521bf78382d67b5171f9bac0f39c2))
+
 ## [0.1.0](https://github.com/LooLzzz/docking-station/compare/v0.1.0...v0.1.0) (2024-08-02)
 
 
