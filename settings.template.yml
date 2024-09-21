@@ -12,6 +12,9 @@ server:
   possible_image_version_labels:  # order matters!
     - org.label-schema.version
     - org.opencontainers.image.version
+  python_on_whales__ignored_image_prefixes:
+    - docker.io/library/
+    - docker.io/
   time_until_update_is_mature: 1w
 
 auto_updater:

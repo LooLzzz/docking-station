@@ -5,6 +5,7 @@ from fastapi import APIRouter, status
 from .. import routes
 from ..schemas import DockerStack, DockerStackRootModel, GetStatsResponse
 from ..settings import AppSettings, get_app_settings
+from .regctl import router as regctl_router
 from .stacks import router as stacks_router
 
 __all__ = [
@@ -14,7 +15,8 @@ __all__ = [
 app_settings = get_app_settings()
 router = APIRouter()
 
-router.include_router(stacks_router, prefix='/stacks')
+router.include_router(stacks_router, tags=['Stacks'], prefix='/stacks')
+router.include_router(regctl_router, tags=['Regctl'], prefix='/regctl')
 
 
 @router.get('',

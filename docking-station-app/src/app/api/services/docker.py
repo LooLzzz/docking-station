@@ -121,8 +121,12 @@ async def list_images(repository_or_tag: str = None,
             version=version,
         )
 
+    clean_repository_or_tag = repository_or_tag
+    for prefix in app_settings.server.python_on_whales__ignored_image_prefixes:
+        clean_repository_or_tag = clean_repository_or_tag.removeprefix(prefix)
+
     _images = docker.image.list(
-        repository_or_tag=repository_or_tag,
+        repository_or_tag=clean_repository_or_tag,
         filters=filters or {},
     )
     images = await asyncio.gather(*[
