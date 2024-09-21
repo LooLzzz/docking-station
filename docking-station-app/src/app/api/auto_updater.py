@@ -1,6 +1,6 @@
 import asyncio
-from logging import getLogger
-from logging.config import dictConfig
+import logging
+import logging.config
 
 import aiohttp
 
@@ -9,8 +9,8 @@ from .schemas import (DockerContainer, DockerStackResponse,
 from .settings import AutoUpdaterLogSettings, get_app_settings
 
 app_settings = get_app_settings()
-dictConfig(AutoUpdaterLogSettings().model_dump())
-logger = getLogger('auto-updater')
+logging.config.dictConfig(AutoUpdaterLogSettings().model_dump())
+logger = logging.getLogger('auto-updater')
 
 BASE_API_URL = f'http://localhost:{app_settings.server_port}/api'
 LOCK = asyncio.Semaphore(app_settings.auto_updater.max_concurrent)
@@ -88,4 +88,13 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    while True:
+        try:
+            asyncio.run(main())
+
+        except (KeyboardInterrupt, SystemExit):
+            logger.info('Auto updater stopped')
+            exit()
+
+        except Exception as exc:
+            logger.exception(f'Auto updater stopped with error, restarting')

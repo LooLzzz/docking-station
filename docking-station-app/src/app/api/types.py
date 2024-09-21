@@ -34,6 +34,14 @@ def _validate_interval(value):
     return value
 
 
+def _timedelta_to_seconds(value: timedelta):
+    match value:
+        case timedelta():
+            return value.total_seconds()
+        case _:
+            return value
+
+
 Interval = Annotated[timedelta,
-                     BeforeValidator(_validate_interval),
-                     PlainSerializer(lambda x: x.total_seconds(), when_used='unless-none')]
+                     PlainSerializer(_timedelta_to_seconds, when_used='unless-none'),
+                     BeforeValidator(_validate_interval)]

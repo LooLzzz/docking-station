@@ -23,13 +23,6 @@
       "module": "api.auto_updater",
     },
     {
-      "name": "Next.js: Fullstack",
-      "type": "node-terminal",
-      "request": "launch",
-      "command": "bun run dev",
-      "cwd": "${workspaceFolder}/docking-station-app",
-    },
-    {
       "name": "Next.js: Frontend",
       "type": "node-terminal",
       "request": "launch",
@@ -41,5 +34,14 @@
       //   "action": "debugWithChrome"
       // }
     },
+  ],
+  "compounds": [
+    {
+      "name": "Fullstack: Next.js + FastAPI",
+      "configurations": [
+        "Python: FastAPI",
+        "Next.js: Frontend"
+      ]
+    }
   ]
 }

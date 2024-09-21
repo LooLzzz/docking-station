@@ -28,9 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             theme={theme}
             defaultColorScheme='dark'
           >
-            <Notifications
-              position='bottom-left'
-            />
+            <Notifications position='bottom-left'/>
             <ModalsProvider>
               <AppShell>
                 {children}
