@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/LooLzzz/docking-station/compare/v0.2.0...v0.3.0) (2024-09-21)
+
+
+### Features
+
+* **api:** added `/api/regctl/` route with `inspect` and `digest` endpoints ([546cb58](https://github.com/LooLzzz/docking-station/commit/546cb586fa001c27e139d8fe3559818a5952e4ab))
+* **web-ui:** added Accordion component to ExecutionDetails modal
+* **auto-updater:** `auto_updater.py` will keep restarting until stopped manually (the modules itself is still disabled by default)
+
+### Bug Fixes
+
+* [#7](https://github.com/LooLzzz/docking-station/issues/7) - added new "python_on_whales__ignored_image_prefixes" option in `/app/config/settings.py` - hopefully this fixes the docker.io `KeyError` issue ([#25](https://github.com/LooLzzz/docking-station/issues/25)) ([546cb58](https://github.com/LooLzzz/docking-station/commit/546cb586fa001c27e139d8fe3559818a5952e4ab))
+* **web-ui:** stopped react-query from constantly refetching to try and save on api-limit
+
 ## [0.2.0](https://github.com/LooLzzz/docking-station/compare/v0.1.0...v0.2.0) (2024-08-02)
 
 
