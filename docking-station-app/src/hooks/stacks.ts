@@ -52,6 +52,7 @@ export const useGetComposeService = <TData extends DockerContainer>(stackName: s
     {
       refetchOnWindowFocus: false,
       staleTime: Infinity,
+      retry: false,
       ...options,
     }
   )
@@ -84,6 +85,7 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQu
     {
       refetchOnWindowFocus: false,
       staleTime: Infinity,
+      retry: false,
       ...options,
     }
   )
@@ -114,6 +116,7 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
     {
       refetchOnWindowFocus: false,
       staleTime: Infinity,
+      retry: false,
       ...options,
     }
   )
@@ -208,6 +211,7 @@ export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWs
     {
       enabled,
       refetchInterval: 100,
+      retry: false,
       onError,
       queryFn: async () => {
         const { data } = await axios.get<TData[]>(

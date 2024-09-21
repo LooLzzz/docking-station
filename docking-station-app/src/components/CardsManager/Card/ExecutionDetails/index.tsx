@@ -1,7 +1,8 @@
 import { DockerServiceUpdateWsMessage } from '@/types'
-import { Code, ScrollArea, Timeline, TimelineItemProps, type TimelineProps } from '@mantine/core'
+import { Accordion, Code, ScrollArea, Text, Timeline, TimelineItemProps, Title, type TimelineProps } from '@mantine/core'
 import { IconArrowsUpDown, IconCloud, IconPlayerPlayFilled, IconRecycle, IconSquareRoundedCheck } from '@tabler/icons-react'
 import { useMemo } from 'react'
+import classes from './styles.module.scss'
 
 interface ExecutionDetailsProps extends TimelineProps {
   messageHistory?: DockerServiceUpdateWsMessage[]
@@ -71,19 +72,35 @@ export default function ExecutionDetails({
       {...props}
     >
       {
-        groupedMessages.map(([stage, lines]) => (
-          <Timeline.Item key={stage} title={stage} {...timelineItemProps?.[stage]}>
+        groupedMessages.map(([stage, lines], idx) => (
+          <Timeline.Item key={stage} {...timelineItemProps?.[stage]}>
             {
-              lines.length > 0 &&
-              <Code block>
-                <ScrollArea
-                  type='auto'
-                  offsetScrollbars='x'
-                  scrollbars='x'
-                >
-                  {lines.join('\n')}
-                </ScrollArea>
-              </Code>
+              !lines?.length
+                ? (
+                  <Text fw='500' fz='h5'>{stage}</Text>
+                )
+                : (
+                  <Accordion defaultValue={idx === groupedMessages.length - 1 ? stage : undefined} classNames={classes}>
+                    <Accordion.Item value={stage}>
+                      <Accordion.Control>
+                        <Text fw='500' fz='h5'>{stage}</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        {
+                          lines.length > 0 &&
+                          <Code block>
+                            <ScrollArea
+                              type='auto'
+                              offsetScrollbars='x'
+                              scrollbars='x'
+                            >
+                              {lines.join('\n')}
+                            </ScrollArea>
+                          </Code>
+                        }
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  </Accordion>)
             }
           </Timeline.Item>
         ))

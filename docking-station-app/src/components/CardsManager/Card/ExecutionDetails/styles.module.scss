@@ -1,0 +1,20 @@
+.label {
+    padding-top: 0;
+}
+
+.control {
+    padding: 0;
+
+    &:hover {
+        background-color: transparent;
+    }
+}
+
+.item {
+    background-color: var(--mantine-color-body);
+    border: none;
+}
+
+.content {
+    padding: 0;
+}
