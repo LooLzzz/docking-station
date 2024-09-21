@@ -81,6 +81,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       # you should add mount points for each containers' docker-compose file you intend on update using this tool
       # i usually put everything in a single neat folder under
+      #  ⚠️ left stacks path == right stacks path (MUST)
       - /mnt/compose-files:/mnt/compose-files
 ```
 
