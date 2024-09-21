@@ -23,7 +23,7 @@ router = APIRouter()
 task_store: dict[tuple[str, str], tuple[Thread, asyncio.Queue[MessageDict]]] = {}
 
 
-@router.get('', tags=['[GET] Stacks'], response_model=list[DockerStackResponse])
+@router.get('', response_model=list[DockerStackResponse])
 @cached(expire=app_settings.server.cache_control_max_age_seconds)
 async def list_compose_stacks(no_cache: bool = False, include_stopped: bool = False):
     return await docker_services.list_compose_stacks(
@@ -32,7 +32,7 @@ async def list_compose_stacks(no_cache: bool = False, include_stopped: bool = Fa
     )
 
 
-@router.get('/{stack}', tags=['[GET] Stacks'], response_model=DockerStackResponse)
+@router.get('/{stack}', response_model=DockerStackResponse)
 async def get_compose_stack(stack: str, no_cache: bool = False):
     try:
         return await docker_services.get_compose_stack(
@@ -47,7 +47,7 @@ async def get_compose_stack(stack: str, no_cache: bool = False):
         ) from exc
 
 
-@router.get('/{stack}/{service}', tags=['[GET] Stacks'], response_model=DockerContainerResponse)
+@router.get('/{stack}/{service}', response_model=DockerContainerResponse)
 async def get_compose_service_container(stack: str, service: str, no_cache: bool = False):
     try:
         return await docker_services.get_compose_service_container(
@@ -63,7 +63,7 @@ async def get_compose_service_container(stack: str, service: str, no_cache: bool
         ) from exc
 
 
-@router.post('/{stack}/{service}/task', tags=['[UPDATE] Stacks'], response_model=StartComposeStackServiceUpdateTaskResponse)
+@router.post('/{stack}/{service}/task', response_model=StartComposeStackServiceUpdateTaskResponse)
 async def create_compose_stack_service_update_task(stack: str, service: str, request_body: DockerStackUpdateRequest):
     task_thread, message_queue = docker_services.update_compose_stack_ws(
         stack_name=stack,
@@ -82,7 +82,7 @@ async def create_compose_stack_service_update_task(stack: str, service: str, req
     )
 
 
-@router.get('/{stack}/{service}/task', tags=['[UPDATE] Stacks'], response_model=list[MessageDictResponse])
+@router.get('/{stack}/{service}/task', response_model=list[MessageDictResponse])
 async def poll_compose_stack_service_update_task(stack: str, service: str):
     if (stack, service) not in task_store:
         return []

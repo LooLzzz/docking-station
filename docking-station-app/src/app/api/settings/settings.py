@@ -52,6 +52,8 @@ class ServerSettings(BaseSettings, CamelCaseAliasedBaseModel):
                                                                          'org.opencontainers.image.source'])
     possible_image_version_labels: list[str] = Field(default_factory=lambda: ['org.label-schema.version',
                                                                               'org.opencontainers.image.version'])
+    python_on_whales__ignored_image_prefixes: list[str] = Field(default_factory=lambda: ['docker.io/',
+                                                                                         'docker.io/library/'])
     time_until_update_is_mature: Interval = '1w'
 
     @property
