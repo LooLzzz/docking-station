@@ -52,7 +52,7 @@ async def update_service(service: DockerContainer):
 async def main():
     if not app_settings.auto_updater.enabled:
         logger.info('Auto updater is disabled')
-        return
+        exit(0)
 
     loop = asyncio.get_event_loop()
     while True:
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
         except (KeyboardInterrupt, SystemExit):
             logger.info('Auto updater stopped')
-            exit()
+            exit(0)
 
         except Exception as exc:
             logger.exception(f'Auto updater stopped with error, restarting')
