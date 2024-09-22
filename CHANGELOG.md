@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/LooLzzz/docking-station/compare/v0.3.0...v0.3.1) (2024-09-22)
+
+
+### Bug Fixes
+
+* stop auto_updater log spamming ([9815b73](https://github.com/LooLzzz/docking-station/commit/9815b7341891e27af04d9a766c11e11cd4458906))
+
 ## [0.3.0](https://github.com/LooLzzz/docking-station/compare/v0.2.0...v0.3.0) (2024-09-21)
 
 
