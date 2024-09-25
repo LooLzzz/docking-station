@@ -1,23 +1,34 @@
 'use client'
 
+import { useListComposeServicesFiltered } from '@/hooks/stacks'
 import { useFiltersStore } from '@/store'
-import { ActionIcon, Center, Popover, TextInput, rem, useComputedColorScheme } from '@mantine/core'
+import { ActionIcon, Group, Popover, TextInput, rem, useComputedColorScheme } from '@mantine/core'
 import { useDebouncedState, useWindowEvent } from '@mantine/hooks'
-import { IconFilter, IconFilterFilled, IconSearch } from '@tabler/icons-react'
+import { IconFilter, IconFilterFilled, IconSearch, IconSquare, IconSquareCheckFilled, IconSquareMinusFilled } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import FiltersPane from './FiltersPane'
-import classes from './SearchBar.module.css'
 
 
 export default function SearchBar() {
-  const textInputRef = useRef<HTMLInputElement>(null)
-  const colorScheme = useComputedColorScheme()
-  const {
+  const [
     searchValue,
     isFiltersActive,
-    setSearchValue
-  } = useFiltersStore()
+    selectedServices,
+    setSearchValue,
+    addSelectedService,
+    clearSelectedServices,
+  ] = useFiltersStore(state => [
+    state.searchValue,
+    state.isFiltersActive,
+    state.selectedServices,
+    state.setSearchValue,
+    state.addSelectedService,
+    state.clearSelectedServices,
+  ])
+  const textInputRef = useRef<HTMLInputElement>(null)
+  const colorScheme = useComputedColorScheme()
   const [searchValueDebounced, setSearchValueDebounced] = useDebouncedState(searchValue, 150)
+  const { data: filteredServices, isFetching } = useListComposeServicesFiltered({ enabled: false })
 
   const ComputedIconFilter = useMemo(() => (
     isFiltersActive
@@ -37,12 +48,13 @@ export default function SearchBar() {
 
   useEffect(() => {
     setSearchValue(searchValueDebounced)
+    clearSelectedServices()
   }, [searchValueDebounced])
 
   useWindowEvent('keydown', windowKeydownHandler)
 
   return (
-    <Center w='100%'>
+    <Group gap='md' w='100%' justify='center' wrap='nowrap'>
       <TextInput
         ref={textInputRef}
         radius='xl'
@@ -53,9 +65,6 @@ export default function SearchBar() {
         maw={rem(600)}
         w='100%'
         onChange={(event) => setSearchValueDebounced(event.currentTarget.value)}
-        classNames={{
-          input: classes.input,
-        }}
 
         leftSection={
           <IconSearch
@@ -93,6 +102,34 @@ export default function SearchBar() {
           </Popover>
         }
       />
-    </Center>
+
+      <ActionIcon
+        disabled={filteredServices.length === 0 || isFetching}
+        variant='transparent'
+        size='sm'
+        onClick={() => {
+          selectedServices.size === filteredServices.length
+            ? clearSelectedServices()
+            : filteredServices.forEach(({ stackName, serviceName }) =>
+              addSelectedService(`${stackName}/${serviceName}`)
+            )
+        }}
+        c={
+          filteredServices.length === 0 || isFetching
+            ? 'gray.7'
+            : filteredServices.length && selectedServices.size === filteredServices.length
+              ? undefined
+              : 'gray.4'
+        }
+      >
+        {
+          !filteredServices.length || !selectedServices.size
+            ? <IconSquare />
+            : selectedServices.size === filteredServices.length
+              ? <IconSquareCheckFilled />
+              : <IconSquareMinusFilled />
+        }
+      </ActionIcon>
+    </Group>
   )
 }

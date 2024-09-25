@@ -1,0 +1,11 @@
+.container {
+  .selectIcon {
+    opacity: 0;
+    transition: opacity 0.1s ease;
+  }
+
+  &:hover .selectIcon,
+  .selectIcon[data-checked] {
+    opacity: 1;
+  }
+}

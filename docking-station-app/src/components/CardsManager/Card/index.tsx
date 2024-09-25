@@ -4,7 +4,6 @@ import { useAppSettings } from '@/hooks/appSettings'
 import { useGetComposeService, useListComposeStacks, useUpdateComposeStackService } from '@/hooks/stacks'
 import {
   ActionIcon,
-  Box,
   Center,
   Code,
   Group,
@@ -30,22 +29,30 @@ import {
   IconExternalLink,
   IconListDetails,
   IconRefresh,
+  IconSquare,
+  IconSquareCheck,
   IconStack2,
   IconTag,
   IconVersions,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ExecutionDetails from './ExecutionDetails'
+import classes from './index.module.scss'
 
-interface CardProps extends MantineCardProps {
+interface CardProps extends Omit<React.DOMAttributes<HTMLDivElement>, 'onSelect'>, MantineCardProps {
   stackName: string
   serviceName: string
+  selected?: boolean
+  onSelect?: (selected: boolean) => void
 }
 
 
 export default function Card({
   stackName,
   serviceName,
+  selected,
+  onSelect,
+  className = '',
   ...props
 }: CardProps) {
   const { appSettings } = useAppSettings()
@@ -161,7 +168,15 @@ export default function Card({
       pos='relative'
       padding='lg'
       radius='md'
+      onMouseDown={(e) => {
+        // on middle click
+        if (e.button === 1) {
+          onSelect?.(!selected)
+          e.preventDefault()
+        }
+      }}
       {...props}
+      className={`${className} ${classes.container}`}
     >
       <Group
         pos='absolute'
@@ -362,6 +377,43 @@ export default function Card({
         }}
       />
 
+      <Group pos='absolute' bottom={12.5} right={20} style={{ zIndex: 999 }}>
+        {
+          <ActionIcon
+            size='sm'
+            variant='transparent'
+            c={selected ? undefined : 'gray.7'}
+            onClick={() => onSelect?.(!selected)}
+            data-checked={selected || undefined}
+            className={classes.selectIcon}
+          >
+            {
+              selected
+                ? <IconSquareCheck />
+                : <IconSquare />
+            }
+          </ActionIcon>
+        }
+
+        {
+          messageHistory.length > 0 &&
+          <Tooltip withArrow label='Execution Details' events={{
+            hover: true,
+            focus: false,
+            touch: false,
+          }}>
+            <ActionIcon
+              size='sm'
+              color='gray.5'
+              variant='transparent'
+              onClick={() => executionDetailsModalOpen()}
+            >
+              <IconListDetails />
+            </ActionIcon>
+          </Tooltip>
+        }
+      </Group>
+
       {
         messageHistory.length > 0 &&
         (
@@ -372,7 +424,7 @@ export default function Card({
               radius='lg'
               opened={executionDetailsModalVisible}
               onClose={executionDetailsModalClose}
-              title={<Title order={2} fw='bold'>Execution Details</Title>}
+              title={<Title order={2} fw='bold'>Execution Details <Code fz='h4'>{serviceName}</Code></Title>}
               scrollAreaComponent={ModalScrollAreaComponent}
             >
               <ExecutionDetails
@@ -382,23 +434,6 @@ export default function Card({
                 }}
               />
             </Modal>
-
-            <Box pos='absolute' bottom={12.5} right={20} style={{ zIndex: 999 }}>
-              <Tooltip withArrow label='Execution Details' events={{
-                hover: true,
-                focus: false,
-                touch: false,
-              }}>
-                <ActionIcon
-                  size='sm'
-                  color='gray.5'
-                  variant='transparent'
-                  onClick={() => executionDetailsModalOpen()}
-                >
-                  <IconListDetails />
-                </ActionIcon>
-              </Tooltip>
-            </Box>
           </>
         )
       }

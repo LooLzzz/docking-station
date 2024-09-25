@@ -4,6 +4,7 @@ import DockingStationLogo from '@/public/dockingstation-solid-black.svg'
 
 import { SearchBar } from '@/components'
 import { useListComposeStacks } from '@/hooks/stacks'
+import { useFiltersStore } from '@/store'
 import {
   ActionIcon,
   AppShell,
@@ -16,7 +17,9 @@ import {
   useMantineColorScheme,
   useMantineTheme
 } from '@mantine/core'
-import { IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
+import { IconCloudDownload, IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
+import { useCallback } from 'react'
+import { useQueryClient } from 'react-query'
 
 const SunIcon = () => {
   const theme = useMantineTheme()
@@ -41,11 +44,35 @@ const MoonIcon = () => {
 }
 
 export default function BasicAppShell({ children }: { children: React.ReactNode }) {
+  const [
+    selectedServices,
+    clearSelectedServices,
+  ] = useFiltersStore((state) => [
+    state.selectedServices,
+    state.clearSelectedServices,
+  ])
+  const queryClient = useQueryClient()
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
-  const { refetch } = useListComposeStacks({
+  const { data: services, refetch: refetchComposeStacks } = useListComposeStacks({
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
   })
+
+  const handleRefreshSelected = useCallback(() => {
+    if (!selectedServices.size) {
+      refetchComposeStacks()
+    } else {
+      selectedServices.forEach((service) => {
+        const [stackName, serviceName] = service.split('/')
+        queryClient.refetchQueries(['stacks', stackName, serviceName])
+        clearSelectedServices()
+      })
+    }
+  }, [selectedServices, queryClient, refetchComposeStacks, clearSelectedServices])
+
+  const handleUpdateSelected = useCallback(() => {
+    // TODO: Implement batch update
+  }, [selectedServices, services])
 
   return (
     <AppShell
@@ -68,11 +95,29 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
             </Center>
 
             <Center component={Group} gap={5} wrap='nowrap'>
-              <Tooltip withArrow label='Refresh All'>
+              <Tooltip
+                withArrow
+                label={selectedServices.size ? 'Update Selected' : 'Update All'}
+              >
+                <ActionIcon
+                  c='gray'
+                  variant='transparent'
+                  onClick={handleUpdateSelected}
+                >
+                  <IconCloudDownload
+                    size={20}
+                    stroke={2.5}
+                  />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip
+                withArrow
+                label={selectedServices.size ? 'Refresh Selected' : 'Refresh All'}
+              >
                 <ActionIcon
                   color='gray'
                   variant='transparent'
-                  onClick={() => refetch()}
+                  onClick={handleRefreshSelected}
                 >
                   <IconRefresh
                     size={20}

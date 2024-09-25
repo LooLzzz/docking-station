@@ -1,18 +1,19 @@
 import { apiRoutes } from '@/routes'
+import { useFiltersStore } from '@/store'
 import type {
   DockerContainer,
   DockerContainerResponse,
   DockerServiceUpdateRequest,
-  DockerServiceUpdateResponse,
   DockerServiceUpdateWsMessage,
   DockerStack,
   DockerStackResponse,
 } from '@/types'
+import { escapeRegExp } from '@/utils'
 import { notifications } from '@mantine/notifications'
 import axios, { AxiosError } from 'axios'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { UseQueryOptions, useMutation, useQuery, useQueryClient } from 'react-query'
-import useWebSocket from 'react-use-websocket'
+import { UseQueryOptions, useQuery, useQueryClient } from 'react-query'
+import { useAppSettings } from './appSettings'
 import { parseDockerContainerDates, parseDockerStackDates } from './utils'
 
 
@@ -89,6 +90,65 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQu
       ...options,
     }
   )
+}
+
+export const useListComposeServicesFiltered = <TData extends DockerStack[]>(options: UseQueryOptions<TData> = {}) => {
+  const [
+    maturedUpdatesOnly,
+    searchValue,
+    updatesOnly,
+  ] = useFiltersStore((state) => [
+    state.maturedUpdatesOnly,
+    state.searchValue,
+    state.updatesOnly,
+  ])
+  const { appSettings } = useAppSettings()
+  const { data = [], ...rest } = useListComposeStacks(options)
+
+  const services = useMemo(() => (
+    data
+      .flatMap(stack => stack.services)
+      .sort((a, b) => (
+        a.hasUpdates !== b.hasUpdates
+          ? Number(b.hasUpdates) - Number(a.hasUpdates)
+          : a.hasUpdates
+            ? a.image.latestUpdate.getTime() - b.image.latestUpdate.getTime()
+            : b.createdAt.getTime() - a.createdAt.getTime()
+      ))
+      .filter(service => {
+        let flag = true
+
+        if (updatesOnly) {
+          flag &&= service.hasUpdates
+        }
+
+        if (maturedUpdatesOnly) {
+          if (!service?.hasUpdates || !appSettings?.server?.timeUntilUpdateIsMature)
+            flag &&= false
+
+          const latestUpdateTimestampSeconds = (
+            service?.image?.latestUpdate
+              ? (Date.now() - service?.image?.latestUpdate.getTime()) * 0.001
+              : 0
+          )
+          flag &&= latestUpdateTimestampSeconds >= (appSettings?.server.timeUntilUpdateIsMature ?? 0)
+        }
+
+        if (searchValue) {
+          flag &&= [
+            service.stackName?.match(new RegExp(escapeRegExp(searchValue), 'i')),
+            service.name.match(new RegExp(escapeRegExp(searchValue), 'i')),
+          ].some(Boolean)
+        }
+
+        return flag
+      })
+  ), [data, updatesOnly, appSettings, searchValue, maturedUpdatesOnly])
+
+  return {
+    data: services,
+    ...rest
+  }
 }
 
 export const useGetComposeStack = <TData extends DockerStack>(stackName: string, options: UseQueryOptions<TData> = {}) => {
@@ -174,12 +234,8 @@ export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWs
   )
 
   useEffect(() => {
-    if (lastMessage) {
-      console.log(lastMessage)
-
-      if (lastMessage.stage.toLowerCase() === 'finished') {
-        onSuccess()
-      }
+    if (lastMessage?.stage.toLowerCase() === 'finished') {
+      onSuccess()
     }
   }, [lastMessage])
 
@@ -189,7 +245,7 @@ export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWs
     setEnabled(true)
   }
 
-  const { } = useQuery(
+  const { isFetched: taskCreated } = useQuery(
     ['stacks', 'task', stackName, serviceName, 'create'],
     {
       enabled,
@@ -209,13 +265,16 @@ export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWs
   const { isLoading: isPolling } = useQuery(
     ['stacks', 'task', stackName, serviceName, 'poll'],
     {
-      enabled,
+      enabled: enabled && taskCreated,
       refetchInterval: 100,
       retry: false,
       onError,
       queryFn: async () => {
         const { data } = await axios.get<TData[]>(
           apiRoutes.pollUpdateComposeStackServiceTask(stackName, serviceName),
+          {
+            params: { offset: messageHistory.length - 1 }
+          }
         )
         concatMessageHistory(data)
         return data

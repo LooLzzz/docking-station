@@ -1,7 +1,8 @@
 import { DockerServiceUpdateWsMessage } from '@/types'
-import { Accordion, Code, ScrollArea, Text, Timeline, TimelineItemProps, Title, type TimelineProps } from '@mantine/core'
+import { Accordion, Code, ScrollArea, Text, Timeline, TimelineItemProps, type TimelineProps } from '@mantine/core'
+import { useSet } from '@mantine/hooks'
 import { IconArrowsUpDown, IconCloud, IconPlayerPlayFilled, IconRecycle, IconSquareRoundedCheck } from '@tabler/icons-react'
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import classes from './styles.module.scss'
 
 interface ExecutionDetailsProps extends TimelineProps {
@@ -45,6 +46,9 @@ export default function ExecutionDetails({
   messageHistory = [],
   ...props
 }: ExecutionDetailsProps) {
+  const expandedAccordionValues = useSet<TimelineStages>()
+  const [userIteraction, setUserIteraction] = useState(false)
+
   const groupedMessages = useMemo(() => {
     const res: Array<[TimelineStages, string[]]> = []
     for (const { stage, message } of messageHistory) {
@@ -63,6 +67,26 @@ export default function ExecutionDetails({
     )
   ), [groupedMessages])
 
+  const handleOnAccordionChange = useCallback((stage: TimelineStages, current: string | null) => {
+    setUserIteraction(true)
+    if (current) {
+      expandedAccordionValues.add(stage as TimelineStages)
+    } else {
+      expandedAccordionValues.delete(stage as TimelineStages)
+    }
+  }, [setUserIteraction])
+
+  useEffect(() => {
+    if (userIteraction)
+      return
+
+    const [stage, lines] = groupedMessages.at(-1) ?? ['', []]
+    if (lines.length) {
+      expandedAccordionValues.clear()
+      expandedAccordionValues.add(stage as TimelineStages)
+    }
+  }, [userIteraction, groupedMessages])
+
   return (
     <Timeline
       color='blue.9'
@@ -72,7 +96,7 @@ export default function ExecutionDetails({
       {...props}
     >
       {
-        groupedMessages.map(([stage, lines], idx) => (
+        groupedMessages.map(([stage, lines]) => (
           <Timeline.Item key={stage} {...timelineItemProps?.[stage]}>
             {
               !lines?.length
@@ -80,7 +104,11 @@ export default function ExecutionDetails({
                   <Text fw='500' fz='h5'>{stage}</Text>
                 )
                 : (
-                  <Accordion defaultValue={idx === groupedMessages.length - 1 ? stage : undefined} classNames={classes}>
+                  <Accordion
+                    classNames={classes}
+                    value={expandedAccordionValues.has(stage) ? stage : ''}
+                    onChange={(value) => handleOnAccordionChange(stage as TimelineStages, value)}
+                  >
                     <Accordion.Item value={stage}>
                       <Accordion.Control>
                         <Text fw='500' fz='h5'>{stage}</Text>
@@ -94,13 +122,14 @@ export default function ExecutionDetails({
                               offsetScrollbars='x'
                               scrollbars='x'
                             >
-                              {lines.join('\n')}
+                              {lines.join('\n').trimEnd()}
                             </ScrollArea>
                           </Code>
                         }
                       </Accordion.Panel>
                     </Accordion.Item>
-                  </Accordion>)
+                  </Accordion>
+                )
             }
           </Timeline.Item>
         ))

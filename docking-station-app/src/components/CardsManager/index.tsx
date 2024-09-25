@@ -1,64 +1,32 @@
 'use client'
 
-import { useAppSettings } from '@/hooks'
-import { useListComposeStacks } from '@/hooks/stacks'
+import { useListComposeServicesFiltered } from '@/hooks/stacks'
 import { useFiltersStore } from '@/store'
-import { escapeRegExp } from '@/utils'
 import { SimpleGrid, rem, useComputedColorScheme } from '@mantine/core'
-import { useMemo } from 'react'
+import { useCallback } from 'react'
 import Card from './Card'
 import classes from './CardManager.module.css'
 import EmptyCard from './EmptyCard'
 
 export default function CardsManager() {
+  const [
+    selectedServices,
+    addSelectedService,
+    deleteSelectedService,
+  ] = useFiltersStore((state) => [
+    state.selectedServices,
+    state.addSelectedService,
+    state.deleteSelectedService,
+    state.clearSelectedServices,
+  ])
   const colorScheme = useComputedColorScheme()
-  const { appSettings } = useAppSettings()
-  const {
-    maturedUpdatesOnly,
-    searchValue,
-    updatesOnly,
-  } = useFiltersStore()
-  const { data = [], isFetching } = useListComposeStacks()
+  const { data: services, isFetching } = useListComposeServicesFiltered()
 
-  const services = useMemo(() => (
-    data
-      .flatMap(stack => stack.services)
-      .sort((a, b) => (
-        a.hasUpdates !== b.hasUpdates
-          ? Number(b.hasUpdates) - Number(a.hasUpdates)
-          : a.hasUpdates
-            ? a.image.latestUpdate.getTime() - b.image.latestUpdate.getTime()
-            : b.createdAt.getTime() - a.createdAt.getTime()
-      ))
-      .filter(service => {
-        let flag = true
-
-        if (updatesOnly) {
-          flag &&= service.hasUpdates
-        }
-
-        if (maturedUpdatesOnly) {
-          if (!service?.hasUpdates || !appSettings?.server?.timeUntilUpdateIsMature)
-            flag &&= false
-
-          const latestUpdateTimestampSeconds = (
-            service?.image?.latestUpdate
-              ? (Date.now() - service?.image?.latestUpdate.getTime()) * 0.001
-              : 0
-          )
-          flag &&= latestUpdateTimestampSeconds >= (appSettings?.server.timeUntilUpdateIsMature ?? 0)
-        }
-
-        if (searchValue) {
-          flag &&= [
-            service.stackName?.match(new RegExp(escapeRegExp(searchValue), 'i')),
-            service.name.match(new RegExp(escapeRegExp(searchValue), 'i')),
-          ].some(Boolean)
-        }
-
-        return flag
-      })
-  ), [data, updatesOnly, searchValue, maturedUpdatesOnly])
+  const handleSelect = useCallback((selected: boolean, stackName: string, serviceName: string) => {
+    selected
+      ? addSelectedService(`${stackName}/${serviceName}`)
+      : deleteSelectedService(`${stackName}/${serviceName}`)
+  }, [selectedServices])
 
   return (
     <div>
@@ -69,6 +37,8 @@ export default function CardsManager() {
               key={`${stackName}/${serviceName}`}
               stackName={stackName!}
               serviceName={serviceName!}
+              onSelect={(selected) => handleSelect(selected, stackName!, serviceName!)}
+              selected={selectedServices.has(`${stackName}/${serviceName}`)}
               bg={colorScheme === 'light' ? 'gray.1' : undefined}
               className={classes.item}
               miw={rem(325)}
