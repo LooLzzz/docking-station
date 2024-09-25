@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
@@ -7,11 +8,11 @@ from .containers import DockerContainer
 
 __all__ = [
     'DockerStack',
+    'DockerStackBatchUpdateRequest',
     'DockerStackResponse',
     'DockerStackRootModel',
     'DockerStackUpdateRequest',
     'DockerStackUpdateResponse',
-    'StartComposeStackServiceUpdateTaskResponse',
 ]
 
 
@@ -52,6 +53,21 @@ class DockerStackUpdateRequest(CamelCaseAliasedBaseModel):
     restart_containers: bool = True
 
 
+class DockerStackBatchUpdateRequest(CamelCaseAliasedBaseModel):
+    services: list[str]
+    infer_envfile: bool = True
+    prune_images: bool = False
+    restart_containers: bool = True
+
+    @property
+    def stack_services(self) -> dict[str, list[str]]:
+        res = defaultdict(list)
+        for item in self.services:
+            stack, service = item.split('/')
+            res[stack].append(service)
+        return dict(res)
+
+
 class DockerStackResponse(DockerStack):
     """Alias for `DockerStack`"""
 
@@ -59,8 +75,3 @@ class DockerStackResponse(DockerStack):
 class DockerStackUpdateResponse(CamelCaseAliasedBaseModel):
     output: list[str]
     success: bool
-
-
-class StartComposeStackServiceUpdateTaskResponse(CamelCaseAliasedBaseModel):
-    task_id: str
-    created: bool

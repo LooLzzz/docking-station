@@ -5,8 +5,10 @@ from threading import Thread
 
 from fastapi import HTTPException
 from python_on_whales import DockerClient, docker
-from python_on_whales.components.container.cli_wrapper import Container as WhalesContainer
-from python_on_whales.components.container.cli_wrapper import DockerContainerListFilters
+from python_on_whales.components.container.cli_wrapper import \
+    Container as WhalesContainer
+from python_on_whales.components.container.cli_wrapper import \
+    DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
 from ..schemas import DockerContainer, DockerImage, DockerStack, MessageDict
@@ -25,8 +27,8 @@ __all__ = [
     'update_compose_stack',
 ]
 
-app_settings = get_app_settings()
 logger = getLogger(__name__)
+app_settings = get_app_settings()
 
 
 async def list_containers(filters: DockerContainerListFilters = None,
@@ -305,23 +307,20 @@ async def update_compose_stack(stack_name: str,
 
 
 def update_compose_stack_ws(stack_name: str,
-                            service_name: str = None,
+                            services: list[str] = [],
                             infer_envfile: bool = True,
                             restart_containers: bool = True,
                             prune_images: bool = False):
-    queue: asyncio.Queue[MessageDict] = asyncio.Queue()
 
-    async def _task():
-        nonlocal queue
+    async def _task(queue: asyncio.Queue[MessageDict]):
         nonlocal stack_name
-        nonlocal service_name
+        nonlocal services
         nonlocal infer_envfile
         nonlocal restart_containers
         nonlocal prune_images
 
         env_file = None
         config_files = None
-        output = []
 
         stack = next(iter(
             docker.compose.ls(
@@ -356,10 +355,9 @@ def update_compose_stack_ws(stack_name: str,
             *env_file_cmd,
             'up', '-d',
             *pull_cmd,
-            service_name,
+            *services,
         ])
         for line in stdout:
-            output.append(line)
             queue.put_nowait(
                 MessageDict(
                     stage='docker compose up --pull always',
@@ -367,12 +365,33 @@ def update_compose_stack_ws(stack_name: str,
                 )
             )
 
-        if prune_images:
+        if app_settings.server.dryrun:
+            n = 25
+            for i in range(1, n + 1):
+                queue.put_nowait(
+                    MessageDict(
+                        stage='docker compose up --pull always',
+                        message=f'test line {i}/{n}',
+                    )
+                )
+                await asyncio.sleep(0.1)
+
+        if app_settings.server.dryrun:
+            n = 25
+            for i in range(1, n + 1):
+                queue.put_nowait(
+                    MessageDict(
+                        stage='docker image prune',
+                        message=f'test line {i}/{n}',
+                    )
+                )
+                await asyncio.sleep(0.1)
+
+        if prune_images and not app_settings.server.dryrun:
             stdout = subprocess_stream_generator([
                 'docker', 'image', 'prune', '-f'
             ])
             for line in stdout:
-                output.append(line)
                 queue.put_nowait(
                     MessageDict(
                         stage='docker image prune',
@@ -383,10 +402,10 @@ def update_compose_stack_ws(stack_name: str,
         await queue.put(
             MessageDict(
                 stage='Finished',
-                # message=output,
             )
         )
 
-    thread = Thread(target=lambda: asyncio.run(_task()), daemon=True)
-    thread.start()
-    return thread, queue
+    queue: asyncio.Queue[MessageDict] = asyncio.Queue()
+    worker = Thread(target=lambda: asyncio.run(_task(queue)), daemon=True)
+    worker.start()
+    return worker, queue
