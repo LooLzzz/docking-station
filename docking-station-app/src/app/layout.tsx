@@ -8,8 +8,8 @@ import { themeOverride } from '@/mantineTheme'
 import { ColorSchemeScript, MantineProvider, createTheme } from '@mantine/core'
 import { ModalsProvider } from '@mantine/modals'
 import { Notifications } from '@mantine/notifications'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Inter } from 'next/font/google'
-import { QueryClient, QueryClientProvider } from 'react-query'
 
 const inter = Inter({ subsets: ['latin'] })
 const theme = createTheme(themeOverride)
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             theme={theme}
             defaultColorScheme='dark'
           >
-            <Notifications position='bottom-left'/>
+            <Notifications position='bottom-left' />
             <ModalsProvider>
               <AppShell>
                 {children}

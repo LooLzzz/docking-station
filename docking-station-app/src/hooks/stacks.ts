@@ -10,19 +10,19 @@ import type {
 } from '@/types'
 import { escapeRegExp } from '@/utils'
 import { notifications } from '@mantine/notifications'
+import { UseQueryOptions, useQuery, useQueryClient } from '@tanstack/react-query'
 import axios, { AxiosError } from 'axios'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { UseQueryOptions, useQuery, useQueryClient } from 'react-query'
 import { useAppSettings } from './appSettings'
 import { parseDockerContainerDates, parseDockerStackDates } from './utils'
 
 
-export const useGetComposeService = <TData extends DockerContainer>(stackName: string, serviceName: string, options: UseQueryOptions<TData> = {}) => {
+export const useGetComposeService = <TData extends DockerContainer>(stackName: string, serviceName: string, options: Omit<Omit<UseQueryOptions<TData>, 'queryKey'>, 'queryKey'> = {}) => {
   const client = useQueryClient()
 
-  return useQuery<TData>(
-    ['stacks', stackName, serviceName],
-    async ({ queryKey, meta }) => {
+  return useQuery<TData>({
+    queryKey: ['stacks', stackName, serviceName],
+    queryFn: async ({ queryKey, meta }) => {
       const isInvalidated = client.getQueryState(queryKey)?.isInvalidated
       const noCache = meta?.noCache || isInvalidated
       const { data } = await axios.get<DockerContainerResponse>(
@@ -50,21 +50,19 @@ export const useGetComposeService = <TData extends DockerContainer>(stackName: s
 
       return parsedData
     },
-    {
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-      ...options,
-    }
-  )
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    retry: false,
+    ...options,
+  })
 }
 
-export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQueryOptions<TData> = {}) => {
+export const useListComposeStacks = <TData extends DockerStack[]>(options: Omit<Omit<UseQueryOptions<TData>, 'queryKey'>, 'queryKey'> = {}) => {
   const client = useQueryClient()
 
-  return useQuery<TData>(
-    ['stacks'],
-    async ({ queryKey, meta }) => {
+  return useQuery<TData>({
+    queryKey: ['stacks'],
+    queryFn: async ({ queryKey, meta }) => {
       const selfQueryState = client.getQueryState(queryKey)
       const noCache = selfQueryState?.data && (meta?.noCache || selfQueryState?.isInvalidated)
       const { data } = await axios.get<DockerStackResponse[]>(
@@ -83,16 +81,14 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: UseQu
 
       return stacks
     },
-    {
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-      ...options,
-    }
-  )
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    retry: false,
+    ...options,
+  })
 }
 
-export const useListComposeServicesFiltered = <TData extends DockerStack[]>(options: UseQueryOptions<TData> = {}) => {
+export const useListComposeServicesFiltered = <TData extends DockerStack[]>(options: Omit<UseQueryOptions<TData>, 'queryKey'> = {}) => {
   const [
     maturedUpdatesOnly,
     searchValue,
@@ -151,12 +147,12 @@ export const useListComposeServicesFiltered = <TData extends DockerStack[]>(opti
   }
 }
 
-export const useGetComposeStack = <TData extends DockerStack>(stackName: string, options: UseQueryOptions<TData> = {}) => {
+export const useGetComposeStack = <TData extends DockerStack>(stackName: string, options: Omit<UseQueryOptions<TData>, 'queryKey'> = {}) => {
   const client = useQueryClient()
 
-  return useQuery<TData>(
-    ['stacks', stackName],
-    async ({ queryKey, meta }) => {
+  return useQuery<TData>({
+    queryKey: ['stacks', stackName],
+    queryFn: async ({ queryKey, meta }) => {
       const isInvalidated = client.getQueryState(queryKey)?.isInvalidated
       const noCache = meta?.noCache || isInvalidated
       const { data } = await axios.get<DockerStackResponse>(
@@ -173,13 +169,11 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
 
       return stack
     },
-    {
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-      ...options,
-    }
-  )
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    retry: false,
+    ...options,
+  })
 }
 
 export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWsMessage>(stackName: string, serviceName: string, options: DockerServiceUpdateRequest = {}) => {
@@ -200,9 +194,9 @@ export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWs
 
   const onSuccess = async () => {
     // force a no-cache refetch
-    await queryClient.cancelQueries(['stacks', 'task', stackName, serviceName])
-    await queryClient.invalidateQueries(['stacks', stackName, serviceName])
-    await queryClient.refetchQueries(['stacks', stackName, serviceName])
+    await queryClient.cancelQueries({ queryKey: ['stacks', 'task', stackName, serviceName] })
+    await queryClient.invalidateQueries({ queryKey: ['stacks', stackName, serviceName] })
+    await queryClient.refetchQueries({ queryKey: ['stacks', stackName, serviceName] })
 
     setEnabled(false)
 
@@ -217,13 +211,15 @@ export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWs
     if (
       axios.isAxiosError(error)
       && error.status === 404
-    ) return // ignore 404 errors
+    ) return false // ignore 404 errors
 
     notifications.show({
       title: 'Unexpected error',
       message: error.message,
       color: 'red',
     })
+
+    return false
   }
 
   const lastMessage = useMemo(() =>
@@ -240,47 +236,45 @@ export const useUpdateComposeStackService = <TData extends DockerServiceUpdateWs
   }, [lastMessage])
 
   const mutate = async () => {
-    queryClient.invalidateQueries(['stacks', 'task', stackName, serviceName])
+    queryClient.invalidateQueries({
+      queryKey: ['stacks', 'task', stackName, serviceName]
+    })
     setMessageHistory([{ stage: 'Connecting', message: null } as any])
     setEnabled(true)
   }
 
-  const { isFetched: taskCreated } = useQuery(
-    ['stacks', 'task', stackName, serviceName, 'create'],
-    {
-      enabled,
-      staleTime: Infinity,
-      retry: false,
-      onError,
-      queryFn: async () => {
-        const { data } = await axios.post(
-          apiRoutes.createUpdateComposeStackServiceTask(stackName, serviceName),
-          options,
-        )
-        return data
-      },
+  const { isFetched: taskCreated } = useQuery({
+    queryKey: ['stacks', 'task', stackName, serviceName, 'create'],
+    enabled,
+    staleTime: Infinity,
+    retry: false,
+    throwOnError: onError,
+    queryFn: async () => {
+      const { data } = await axios.post(
+        apiRoutes.createUpdateComposeStackServiceTask(stackName, serviceName),
+        options,
+      )
+      return data
     },
-  )
+  })
 
-  const { isLoading: isPolling } = useQuery(
-    ['stacks', 'task', stackName, serviceName, 'poll'],
-    {
-      enabled: enabled && taskCreated,
-      refetchInterval: 100,
-      retry: false,
-      onError,
-      queryFn: async () => {
-        const { data } = await axios.get<TData[]>(
-          apiRoutes.pollUpdateComposeStackServiceTask(stackName, serviceName),
-          {
-            params: { offset: messageHistory.length - 1 }
-          }
-        )
-        concatMessageHistory(data)
-        return data
-      },
+  const { isLoading: isPolling } = useQuery({
+    queryKey: ['stacks', 'task', stackName, serviceName, 'poll'],
+    enabled: enabled && taskCreated,
+    refetchInterval: 100,
+    retry: false,
+    throwOnError: onError,
+    queryFn: async () => {
+      const { data } = await axios.get<TData[]>(
+        apiRoutes.pollUpdateComposeStackServiceTask(stackName, serviceName),
+        {
+          params: { offset: messageHistory.length - 1 }
+        }
+      )
+      concatMessageHistory(data)
+      return data
     },
-  )
+  })
 
   return {
     messageHistory,

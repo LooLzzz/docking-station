@@ -7,5 +7,6 @@ html[data-mantine-color-scheme='light'] {
 .mantine-ActionIcon-root {
   &[data-disabled] {
     background-color: transparent;
+    cursor: unset;
   }
 }

@@ -18,8 +18,8 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { IconCloudDownload, IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
-import { useQueryClient } from 'react-query'
 
 const SunIcon = () => {
   const theme = useMantineTheme()
@@ -45,7 +45,7 @@ const MoonIcon = () => {
 
 export default function BasicAppShell({ children }: { children: React.ReactNode }) {
   const [
-    selectedServices,
+    selectedServicesKeys,
     clearSelectedServices,
   ] = useFiltersStore((state) => [
     state.selectedServices,
@@ -53,26 +53,43 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
   ])
   const queryClient = useQueryClient()
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
-  const { data: services, refetch: refetchComposeStacks } = useListComposeStacks({
+  const { data: stacks = [], refetch: refetchComposeStacks } = useListComposeStacks({
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
   })
 
+  const selectedServices = (
+    stacks
+      .flatMap(({ services }) => services)
+      .filter(({ stackName, serviceName }) => (
+        !selectedServicesKeys.size
+        || selectedServicesKeys.has(`${stackName}/${serviceName}`)
+      ))
+  )
+
+  const selectedServicesWithUpdates = (
+    selectedServices
+      .filter((service) => service.hasUpdates)
+  )
+
   const handleRefreshSelected = useCallback(() => {
-    if (!selectedServices.size) {
+    if (!selectedServices.length) {
       refetchComposeStacks()
     } else {
-      selectedServices.forEach((service) => {
-        const [stackName, serviceName] = service.split('/')
-        queryClient.refetchQueries(['stacks', stackName, serviceName])
+      selectedServices.forEach(({ stackName, serviceName }) => {
+        queryClient.refetchQueries({ queryKey: ['stacks', stackName, serviceName] })
         clearSelectedServices()
       })
     }
   }, [selectedServices, queryClient, refetchComposeStacks, clearSelectedServices])
 
   const handleUpdateSelected = useCallback(() => {
+    // console.log(selectedServicesWithUpdates.map(({ stackName, serviceName }) => `${stackName}/${serviceName}`))
     // TODO: Implement batch update
-  }, [selectedServices, services])
+
+
+
+  }, [selectedServicesWithUpdates])
 
   return (
     <AppShell
@@ -97,10 +114,12 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
             <Center component={Group} gap={5} wrap='nowrap'>
               <Tooltip
                 withArrow
-                label={selectedServices.size ? 'Update Selected' : 'Update All'}
+                disabled={!selectedServicesWithUpdates.length}
+                label={selectedServices.length ? 'Update Selected' : 'Update All'}
               >
                 <ActionIcon
-                  c='gray'
+                  c={selectedServicesWithUpdates.length ? 'gray.4' : 'gray.7'}
+                  disabled={!selectedServicesWithUpdates.length}
                   variant='transparent'
                   onClick={handleUpdateSelected}
                 >
@@ -112,7 +131,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
               </Tooltip>
               <Tooltip
                 withArrow
-                label={selectedServices.size ? 'Refresh Selected' : 'Refresh All'}
+                label={selectedServices.length ? 'Refresh Selected' : 'Refresh All'}
               >
                 <ActionIcon
                   color='gray'
