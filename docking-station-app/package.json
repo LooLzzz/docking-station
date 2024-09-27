@@ -1,6 +1,6 @@
 {
   "name": "docking-station",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "fastapi-dev": "cd ./src/app && fastapi dev api/main.py --reload --host 0.0.0.0 --port ${SERVER_PORT:-3001}",
