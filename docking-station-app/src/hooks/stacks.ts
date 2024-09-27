@@ -275,10 +275,10 @@ export const useCreateUpdateComposeStackTask = (options: DockerServiceUpdateRequ
 }
 
 export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateWsMessage>(stackName: string, serviceName: string) => {
-  const stackServiceQueryKey = useMemo(() => ['stacks', stackName, serviceName], [stackName, serviceName])
+  const stackServiceQueryKey = ['stacks', stackName, serviceName]
   const pollTaskQueryKey = ['stacks', 'task', 'poll', stackName, serviceName]
   const createTaskQueryKey = ['stacks', 'task', 'create', stackName, { [serviceName]: true }]
-  const createTaskPartialQueryKey = useMemo(() => ['stacks', 'task', 'create', stackName], [stackName])
+  const createTaskPartialQueryKey = ['stacks', 'task', 'create', stackName]
 
   const queryClient = useQueryClient()
   const notificationsState = useNotifications()
@@ -307,13 +307,12 @@ export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateW
 
   const onSuccess = async () => {
     // force a no-cache refetch
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: createTaskPartialQueryKey }),
-      queryClient.invalidateQueries({ queryKey: stackServiceQueryKey }),
-      queryClient.refetchQueries({ queryKey: stackServiceQueryKey }),
-    ])
-
     setEnabled(false)
+    document.dispatchEvent(
+      new CustomEvent<StackServiceRefreshEventDetail>('stack-service-refresh', {
+        detail: { stackName, serviceName }
+      })
+    )
 
     for (const notification of notificationsState.notifications) {
       const notificationMessage = (
@@ -327,6 +326,7 @@ export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateW
       }
     }
 
+    await queryClient.invalidateQueries({ queryKey: createTaskPartialQueryKey })
     notifications.show({
       title: `Stack Update Finished`,
       message: `'${stackName}' has been updated successfully`,
