@@ -6,6 +6,22 @@
 ### Features
 
 * **web-ui:** [#33](https://github.com/LooLzzz/docking-station/issues/33) - added services selection + "update selected" and "refresh selected" options ([617312d](https://github.com/LooLzzz/docking-station/commit/617312d47d93650c1fb86124334c68a3aae0a255))
+  * Either use middle-mouse click or the checkbox which appears on hover to select/deselected a service.
+  * Selected cards/services are highlighted
+
+
+### Bug Fixes
+
+* **server:** 'image_tag' sometimes not returned correctly ([617312d](https://github.com/LooLzzz/docking-station/commit/617312d47d93650c1fb86124334c68a3aae0a255))
+
+
+### Miscellaneous Chores
+
+* **web-ui:** added version number to bottom-right footer of web-ui ([27a61d3](https://github.com/LooLzzz/docking-station/commit/27a61d3168ae6c560e6d57f03379df8b551e3ef8))
+
+* **server:** rewrote backend task creation and consumption ([617312d](https://github.com/LooLzzz/docking-station/commit/617312d47d93650c1fb86124334c68a3aae0a255))
+
+* **build:** bump react-query to 5.56.2 ([617312d](https://github.com/LooLzzz/docking-station/commit/617312d47d93650c1fb86124334c68a3aae0a255))
 
 ## [0.3.2](https://github.com/LooLzzz/docking-station/compare/v0.3.2...v0.3.2) (2024-09-27)
 
