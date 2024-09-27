@@ -78,7 +78,8 @@ export default function Card({
   const loadingOverlayVisible = isLoadingParents || isPolling || isRefetching || isLoading
 
   const [seconds, setSeconds] = useState(0)
-  const interval = useInterval(() => setSeconds(s => s + 0.1), 100)
+  const advanceSeconds = useCallback(() => setSeconds(s => s + 0.1), [])
+  const interval = useInterval(advanceSeconds, 100)
   const [executionDetailsModalVisible, {
     open: executionDetailsModalOpen,
     close: executionDetailsModalClose,
