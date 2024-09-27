@@ -1,7 +1,7 @@
 
 services:
-  docking-station-builder:
+  docking-station:
     build:
       context: .
       dockerfile: Dockerfile.deploy
-    # image: docking-station
+    image: loolzzz/docking-station

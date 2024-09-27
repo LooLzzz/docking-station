@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  Code,
   Paper,
   Tooltip,
   type MantineColorsTuple,
@@ -88,6 +89,12 @@ export const themeOverride: MantineThemeOverride = {
           touch: true,
         }
       }
+    }),
+
+    Code: Code.extend({
+      defaultProps: {
+        fz: 'inherit',
+      },
     }),
   },
 }

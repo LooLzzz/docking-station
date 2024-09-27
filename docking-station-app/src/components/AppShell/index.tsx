@@ -3,12 +3,14 @@
 import DockingStationLogo from '@/public/dockingstation-solid-black.svg'
 
 import { SearchBar } from '@/components'
-import { useListComposeStacks } from '@/hooks/stacks'
+import { StackServiceRefreshEventDetail, useCreateUpdateComposeStackTask, useListComposeStacks } from '@/hooks/stacks'
+import { useFiltersStore } from '@/store'
 import {
   ActionIcon,
   AppShell,
   Box,
   Center,
+  Code,
   Container,
   Group,
   Stack,
@@ -19,7 +21,9 @@ import {
   useMantineColorScheme,
   useMantineTheme
 } from '@mantine/core'
-import { IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
+import { modals } from '@mantine/modals'
+import { IconCloudDownload, IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
+import { useCallback } from 'react'
 
 const SunIcon = () => {
   const theme = useMantineTheme()
@@ -44,11 +48,81 @@ const MoonIcon = () => {
 }
 
 export default function BasicAppShell({ children }: { children: React.ReactNode }) {
+  const [
+    selectedServicesKeys,
+    clearSelectedServices,
+  ] = useFiltersStore((state) => [
+    state.selectedServices,
+    state.clearSelectedServices,
+  ])
+  const createUpdateComposeStackTask = useCreateUpdateComposeStackTask({ pruneImages: true })
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
-  const { refetch } = useListComposeStacks({
+  const { data: stacks = [], refetch: refetchComposeStacks } = useListComposeStacks({
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
   })
+
+  const selectedServices = (
+    stacks
+      .flatMap(({ services }) => services)
+      .filter(({ stackName, serviceName }) => (
+        !selectedServicesKeys.size
+        || selectedServicesKeys.has(`${stackName}/${serviceName}`)
+      ))
+  )
+
+  const selectedServicesWithUpdates = (
+    selectedServices
+      .filter((service) => service.hasUpdates)
+  )
+
+  const handleRefreshSelected = useCallback(() => {
+    if (!selectedServices.length) {
+      refetchComposeStacks()
+    } else {
+      selectedServices.forEach(async ({ stackName, serviceName }) => {
+        document.dispatchEvent(
+          new CustomEvent<StackServiceRefreshEventDetail>('stack-service-refresh', {
+            detail: { stackName, serviceName },
+          }),
+        )
+        clearSelectedServices()
+      })
+    }
+  }, [selectedServices, refetchComposeStacks, clearSelectedServices])
+
+  const openUpdateSelectedConfirmModal = useCallback(() => modals.openConfirmModal({
+    centered: true,
+    title: 'Confirm Update Services Action',
+    children: (
+      <Text size='sm'>
+        {[
+          'Are you sure you want to update ',
+          <Code key='1' fw='bold'>{selectedServicesWithUpdates.length}</Code>,
+          ` service${selectedServicesWithUpdates.length > 1 ? 's' : ''}?`
+        ]}
+      </Text>
+    ),
+    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+    onConfirm: () => {
+      const selectedServicesWithUpdatesByStack = selectedServicesWithUpdates.reduce((acc, service) => {
+        const stackName = service.stackName!
+        acc[stackName] = acc[stackName] || []
+        acc[stackName].push(service)
+        return acc
+      }, {} as Record<string, typeof selectedServicesWithUpdates>)
+
+      Object
+        .entries(selectedServicesWithUpdatesByStack)
+        .forEach(([stackName, services]) => {
+          const serviceNames = services.map(({ serviceName }) => serviceName!)
+          createUpdateComposeStackTask(stackName, serviceNames)
+        })
+
+      clearSelectedServices()
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [selectedServicesWithUpdates])
 
   return (
     <AppShell
@@ -71,11 +145,31 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
             </Center>
 
             <Center component={Group} gap={5} wrap='nowrap'>
-              <Tooltip withArrow label='Refresh All'>
+              <Tooltip
+                withArrow
+                disabled={!selectedServicesWithUpdates.length}
+                label={selectedServicesKeys.size ? 'Update Selected' : 'Update All'}
+              >
+                <ActionIcon
+                  c={selectedServicesWithUpdates.length ? 'gray' : (colorScheme == 'dark' ? 'gray.7' : 'gray.4')}
+                  disabled={!selectedServicesWithUpdates.length}
+                  variant='transparent'
+                  onClick={openUpdateSelectedConfirmModal}
+                >
+                  <IconCloudDownload
+                    size={20}
+                    stroke={2.5}
+                  />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip
+                withArrow
+                label={selectedServicesKeys.size ? 'Refresh Selected' : 'Refresh All'}
+              >
                 <ActionIcon
                   color='gray'
                   variant='transparent'
-                  onClick={() => refetch()}
+                  onClick={handleRefreshSelected}
                 >
                   <IconRefresh
                     size={20}

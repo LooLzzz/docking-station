@@ -14,6 +14,8 @@ export const apiRoutes = {
 
   /** `POST` */
   createUpdateComposeStackServiceTask: (stack: string, service: string) => `api/stacks/${stack}/${service}/task`,
+  /** `POST` */
+  createComposeBatchUpdateTask: 'api/stacks/batch_update',
   /** `GET` */
   pollUpdateComposeStackServiceTask: (stack: string, service: string) => `api/stacks/${stack}/${service}/task`,
 }

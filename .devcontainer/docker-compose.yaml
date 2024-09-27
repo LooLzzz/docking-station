@@ -8,13 +8,12 @@ services:
     environment:
       - WEB_PORT=3000
       - SERVER_PORT=3001
-      # - AUTO_UPDATER_ENABLED=false
     volumes:
       - vsc-docking-station-vscode-server:/root/.vscode-server
       - ..:/workspaces/docking-station:cached
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/big-vault/appdata/compose:/mnt/big-vault/appdata/compose
+      - /mnt/appdata/compose-files:/mnt/appdata/compose-files
     labels:
       # for homepage dashboard widget. More info: https://gethomepage.dev/latest/configs/docker/#automatic-service-discovery
       - homepage.group=Dev Containers

@@ -6,6 +6,7 @@ interface FiltersStoreState {
   maturedUpdatesOnly: boolean
   searchValue: string
   updatesOnly: boolean
+  selectedServices: Set<string>
 }
 
 interface FiltersStoreComputedState {
@@ -18,6 +19,9 @@ interface FiltersStoreActions {
   setSearchValue(searchValue: FiltersStoreState['searchValue']): void
   toggleMaturedUpdatesOnlyFilter: () => void
   toggleUpdatesOnlyFilter: () => void
+  addSelectedService: (serviceName: string) => void
+  deleteSelectedService: (serviceName: string) => void
+  clearSelectedServices: () => void
 }
 
 export type FiltersStore = FiltersStoreState & FiltersStoreActions
@@ -39,6 +43,7 @@ export const useFiltersStore = create<FiltersStore>()(
       maturedUpdatesOnly: false,
       searchValue: '',
       updatesOnly: false,
+      selectedServices: new Set(),
 
 
       // ## Actions ##
@@ -52,15 +57,36 @@ export const useFiltersStore = create<FiltersStore>()(
       setFilters: (filters: Partial<FiltersStoreComputed>) => set(filters),
 
       toggleMaturedUpdatesOnlyFilter: () => set(
-        (state) => ({
-          maturedUpdatesOnly: !state.maturedUpdatesOnly,
+        ({ maturedUpdatesOnly }) => ({
+          maturedUpdatesOnly: !maturedUpdatesOnly,
         })
       ),
 
       toggleUpdatesOnlyFilter: () => set(
-        (state) => ({
-          updatesOnly: !state.updatesOnly,
+        ({ updatesOnly }) => ({
+          updatesOnly: !updatesOnly,
         })
+      ),
+
+      addSelectedService: (serviceName) => set(
+        ({ selectedServices }) => {
+          selectedServices.add(serviceName)
+          return { selectedServices }
+        }
+      ),
+
+      deleteSelectedService: (serviceName) => set(
+        ({ selectedServices }) => {
+          selectedServices.delete(serviceName)
+          return { selectedServices }
+        }
+      ),
+
+      clearSelectedServices: () => set(
+        ({ selectedServices }) => {
+          selectedServices.clear()
+          return { selectedServices }
+        }
       ),
     }),
     computeState,

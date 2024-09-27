@@ -1,0 +1,12 @@
+html[data-mantine-color-scheme='light'] {
+  .mantine-TextInput-input {
+    background-color: var(--mantine-color-gray-2);
+  }
+}
+
+.mantine-ActionIcon-root {
+  &[data-disabled] {
+    background-color: transparent;
+    cursor: unset;
+  }
+}

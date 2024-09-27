@@ -2,6 +2,8 @@ import { CardsManager } from '@/components'
 import { Center } from '@mantine/core'
 import { Metadata } from 'next'
 
+import './page.scss'
+
 export default function Home() {
   return (
     <Center>
