@@ -91,18 +91,24 @@ async def poll_compose_stack_service_update_task(stack: str, service: str):
     res: list[MessageDict] = []
 
     try:
-        while True:
-            res.append(
-                message_queue.get_nowait()
-            )
+        try:
+            while True:
+                res.append(
+                    message_queue.get_nowait()
+                )
 
-    except asyncio.QueueEmpty:
-        if not task_thread.is_alive():
-            del task_store[(stack, service)]
-            cache_backend = FastAPICache.get_backend()
-            key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
-            await cache_backend.clear(namespace=key)
+        except asyncio.QueueEmpty:
+            if not task_thread.is_alive():
+                del task_store[(stack, service)]
+                cache_backend = FastAPICache.get_backend()
+                key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
+                await cache_backend.clear(namespace=key)
 
-            task_thread.join()  # re-raise any exceptions from the task
+                task_thread.join()  # re-raise any exceptions from the task
+
+    except Exception as _exc:
+        """ exception handling for 'task_thread.join()' """
+        logger.exception("Error occurred while polling task thread for '%s/%s'", stack, service)
+        raise
 
     return res
