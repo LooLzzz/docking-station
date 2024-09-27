@@ -76,9 +76,9 @@ async def create_compose_stack_service_update_task(stack: str, service: str, req
 @router.post('/batch_update')
 async def create_compose_batch_update_task(request_body: DockerStackBatchUpdateRequest):
 
-    def _acc_task(task: TaskStoreItem,
-                  message_queue: asyncio.Queue[MessageDict],
-                  main_worker: Thread):
+    def _acc_messages_task(task: TaskStoreItem,
+                           message_queue: asyncio.Queue[MessageDict],
+                           main_worker: Thread):
         while True:
             try:
                 task.append_message(
@@ -91,6 +91,14 @@ async def create_compose_batch_update_task(request_body: DockerStackBatchUpdateR
         main_worker.join()  # re-raise any exceptions from the main worker
 
     for stack, services in request_body.stack_services.items():
+        skip = False
+        for service in services:
+            if (stack, service) in task_store:
+                skip = True
+                break
+        if skip:
+            continue
+
         main_worker, queue = docker_services.update_compose_stack_ws(
             stack_name=stack,
             services=services,
@@ -100,10 +108,12 @@ async def create_compose_batch_update_task(request_body: DockerStackBatchUpdateR
         )
 
         task = TaskStoreItem()
-        acc_worker = Thread(target=_acc_task, args=[task, queue, main_worker], daemon=True)
+        acc_worker = Thread(target=_acc_messages_task, args=[task, queue, main_worker], daemon=True)
         task.worker = acc_worker
-        task_store[(stack, '*')] = task
         acc_worker.start()
+
+        for service in services:
+            task_store[(stack, service)] = task
 
     return {}
 

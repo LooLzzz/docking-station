@@ -3,22 +3,24 @@
 import DockingStationLogo from '@/public/dockingstation-solid-black.svg'
 
 import { SearchBar } from '@/components'
-import { useListComposeStacks } from '@/hooks/stacks'
+import { StackServiceRefreshEventDetail, useCreateUpdateComposeStackTask, useListComposeStacks } from '@/hooks/stacks'
 import { useFiltersStore } from '@/store'
 import {
   ActionIcon,
   AppShell,
   Center,
+  Code,
   Container,
   Group,
   Switch,
+  Text,
   Tooltip,
   rem,
   useMantineColorScheme,
   useMantineTheme
 } from '@mantine/core'
+import { modals } from '@mantine/modals'
 import { IconCloudDownload, IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
-import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 
 const SunIcon = () => {
@@ -51,7 +53,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     state.selectedServices,
     state.clearSelectedServices,
   ])
-  const queryClient = useQueryClient()
+  const createUpdateComposeStackTask = useCreateUpdateComposeStackTask()
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const { data: stacks = [], refetch: refetchComposeStacks } = useListComposeStacks({
     enabled: false,  // no auto-fetch
@@ -76,20 +78,49 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     if (!selectedServices.length) {
       refetchComposeStacks()
     } else {
-      selectedServices.forEach(({ stackName, serviceName }) => {
-        queryClient.refetchQueries({ queryKey: ['stacks', stackName, serviceName] })
+      selectedServices.forEach(async ({ stackName, serviceName }) => {
+        document.dispatchEvent(
+          new CustomEvent<StackServiceRefreshEventDetail>('stack-service-refresh', {
+            detail: { stackName, serviceName },
+          }),
+        )
         clearSelectedServices()
       })
     }
-  }, [selectedServices, queryClient, refetchComposeStacks, clearSelectedServices])
+  }, [selectedServices, refetchComposeStacks, clearSelectedServices])
 
-  const handleUpdateSelected = useCallback(() => {
-    // console.log(selectedServicesWithUpdates.map(({ stackName, serviceName }) => `${stackName}/${serviceName}`))
-    // TODO: Implement batch update
+  const openUpdateSelectedConfirmModal = useCallback(() => modals.openConfirmModal({
+    centered: true,
+    title: 'Confirm Update Services Action',
+    children: (
+      <Text size='sm'>
+        {[
+          'Are you sure you want to update ',
+          <Code key='1' fw='bold'>{selectedServicesWithUpdates.length}</Code>,
+          ` service${selectedServicesWithUpdates.length > 1 ? 's' : ''}?`
+        ]}
+      </Text>
+    ),
+    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+    onConfirm: () => {
+      const selectedServicesWithUpdatesByStack = selectedServicesWithUpdates.reduce((acc, service) => {
+        const stackName = service.stackName!
+        acc[stackName] = acc[stackName] || []
+        acc[stackName].push(service)
+        return acc
+      }, {} as Record<string, typeof selectedServicesWithUpdates>)
 
+      Object
+        .entries(selectedServicesWithUpdatesByStack)
+        .forEach(([stackName, services]) => {
+          const serviceNames = services.map(({ serviceName }) => serviceName!)
+          createUpdateComposeStackTask(stackName, serviceNames)
+        })
 
-
-  }, [selectedServicesWithUpdates])
+      clearSelectedServices()
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [selectedServicesWithUpdates])
 
   return (
     <AppShell
@@ -115,13 +146,13 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
               <Tooltip
                 withArrow
                 disabled={!selectedServicesWithUpdates.length}
-                label={selectedServices.length ? 'Update Selected' : 'Update All'}
+                label={selectedServicesKeys.size ? 'Update Selected' : 'Update All'}
               >
                 <ActionIcon
                   c={selectedServicesWithUpdates.length ? 'gray.4' : 'gray.7'}
                   disabled={!selectedServicesWithUpdates.length}
                   variant='transparent'
-                  onClick={handleUpdateSelected}
+                  onClick={openUpdateSelectedConfirmModal}
                 >
                   <IconCloudDownload
                     size={20}
@@ -131,7 +162,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
               </Tooltip>
               <Tooltip
                 withArrow
-                label={selectedServices.length ? 'Refresh Selected' : 'Refresh All'}
+                label={selectedServicesKeys.size ? 'Refresh Selected' : 'Refresh All'}
               >
                 <ActionIcon
                   color='gray'

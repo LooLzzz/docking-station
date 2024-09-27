@@ -47,40 +47,46 @@ class TaskStoreItem:
 
 @dataclass
 class TaskStore(metaclass=Singleton):
-    ttl: timedelta = field(default_factory=lambda: timedelta(minutes=10))
+    ttl: timedelta = field(default_factory=lambda: timedelta(seconds=5))
     _store: dict[StoreKey, TaskStoreItem] = field(default_factory=dict)
 
     def __contains__(self, key: StoreKey):
-        return (
-            key in self._store
-            or (key[0], '*') in self._store
+        return bool(
+            self.get(key, None)
         )
 
     def __getitem__(self, key: StoreKey):
+        if item := self.get(key, None):
+            return item
+        raise KeyError(key)
+
+    def __setitem__(self, key: StoreKey, item: TaskStoreItem | TaskStoreItemDict):
+        print('creating', key)
+
+        match item:
+            case dict():
+                self.create_task(key, **item)
+            case TaskStoreItem():
+                self._store[key] = item
+            case _:
+                raise ValueError('Invalid type')
+
+    def get(self, key: tuple[StackStr, ServiceStr], default: TaskStoreItem | None = None):
         item = None
         if key in self._store:
             item = self._store[key]
         if (key[0], '*') in self._store:
             item = self._store[(key[0], '*')]
 
-        if (not item
-                or datetime.now() - item.timestamp > self.ttl):
+        if (not item or (not item.is_worker_alive()
+                         and datetime.now() - item.timestamp > self.ttl)):
+            print('deleting', key)
             self._store.pop(key, None)
-            raise KeyError(key)
+            return default
 
         return item
 
-    def __setitem__(self, key: StoreKey, value: TaskStoreItemDict | TaskStoreItem):
-        if isinstance(value, dict):
-            value = TaskStoreItem(**value)
-        self._store[key] = value
-
-    def get(self, key: tuple[StackStr, ServiceStr], default: TaskStoreItem | None = None):
-        try:
-            return self[key]
-        except KeyError:
-            return default
-
-    def insert(self, key: StoreKey, **kwargs: Unpack[TaskStoreItemDict]):
-        self[key] = kwargs
-        return self[key]
+    def create_task(self, key: StoreKey, **kwargs: Unpack[TaskStoreItemDict]):
+        item = TaskStoreItem(**kwargs)
+        self._store[key] = item
+        return item

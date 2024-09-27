@@ -56,7 +56,7 @@ export default function ExecutionDetails({
       if (res.length === 0 || res.slice(-1)[0][0] !== stage)
         res.push([stage as TimelineStages, p])
       else
-        res.slice(-1)[0][1].push(message)
+        res.slice(-1)[0][1].push(message!)
     }
     return res
   }, [messageHistory])
@@ -74,6 +74,7 @@ export default function ExecutionDetails({
     } else {
       expandedAccordionValues.delete(stage as TimelineStages)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setUserIteraction])
 
   useEffect(() => {
@@ -85,6 +86,7 @@ export default function ExecutionDetails({
       expandedAccordionValues.clear()
       expandedAccordionValues.add(stage as TimelineStages)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userIteraction, groupedMessages])
 
   return (
@@ -116,7 +118,7 @@ export default function ExecutionDetails({
                       <Accordion.Panel>
                         {
                           lines.length > 0 &&
-                          <Code block>
+                          <Code block fz='xs'>
                             <ScrollArea
                               type='auto'
                               offsetScrollbars='x'

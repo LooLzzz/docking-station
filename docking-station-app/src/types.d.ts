@@ -50,8 +50,8 @@ export interface DockerContainerResponse {
       hostPort: string
     }[]
   }
-  stackName?: string
-  serviceName?: string
+  stackName: string
+  serviceName: string
   status: string
 }
 
@@ -90,5 +90,5 @@ export interface DockerServiceUpdateResponse {
 
 export interface DockerServiceUpdateWsMessage {
   stage: string
-  message: string
+  message: string | null
 }

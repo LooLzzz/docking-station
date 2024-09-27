@@ -44,12 +44,12 @@ export default function SearchBar() {
       textInputRef.current?.focus()
       event.preventDefault()
     }
-  }, [textInputRef?.current])
+  }, [textInputRef])
 
   useEffect(() => {
     setSearchValue(searchValueDebounced)
     clearSelectedServices()
-  }, [searchValueDebounced])
+  }, [searchValueDebounced, setSearchValue, clearSelectedServices])
 
   useWindowEvent('keydown', windowKeydownHandler)
 

@@ -1,7 +1,8 @@
 'use client'
 
 import { useAppSettings } from '@/hooks/appSettings'
-import { useGetComposeService, useListComposeStacks, useUpdateComposeStackService } from '@/hooks/stacks'
+import { useGetComposeService, useListComposeStacks, useUpdateComposeStackServices } from '@/hooks/stacks'
+import { useFiltersStore } from '@/store'
 import {
   ActionIcon,
   Center,
@@ -55,6 +56,11 @@ export default function Card({
   className = '',
   ...props
 }: CardProps) {
+  const [
+    deleteSelectedService,
+  ] = useFiltersStore((state) => [
+    state.deleteSelectedService,
+  ])
   const { appSettings } = useAppSettings()
   const modalViewportRef = useRef<HTMLDivElement>(null)
   const modalViewportPrevScrollHeight = usePrevious(modalViewportRef.current?.scrollHeight)
@@ -64,12 +70,12 @@ export default function Card({
   const { isRefetching: isLoadingParents } = useListComposeStacks({
     enabled: false, // no auto-fetch
   })
-  const { mutate, isMutating, lastMessage, messageHistory } = useUpdateComposeStackService(stackName, serviceName, { pruneImages: true })
+  const { updateServices, isPolling, lastMessage, messageHistory } = useUpdateComposeStackServices(stackName, serviceName, { pruneImages: true })
   const { data, refetch, isRefetching, isLoading } = useGetComposeService(stackName, serviceName, {
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
   })
-  const loadingOverlayVisible = isLoadingParents || isMutating || isRefetching || isLoading
+  const loadingOverlayVisible = isLoadingParents || isPolling || isRefetching || isLoading
 
   const [seconds, setSeconds] = useState(0)
   const interval = useInterval(() => setSeconds(s => s + 0.1), 100)
@@ -121,26 +127,28 @@ export default function Card({
     ),
     labels: { confirm: 'Confirm', cancel: 'Cancel' },
     onConfirm: () => {
-      mutate()
+      updateServices()
       executionDetailsModalOpen()
     },
-  }), [modals, data?.image.imageName])
+  }), [data?.image.imageName, executionDetailsModalOpen, updateServices])
 
   const modalscrollToBottom = useCallback(() => {
     modalViewportRef.current?.scrollTo({
       top: modalViewportRef.current?.scrollHeight,
     })
-  }, [modalViewportRef.current])
+  }, [modalViewportRef])
 
   useEffect(() => {
-    if (!isMutating && isModalViewportAtBottom)
+    if (!isPolling && isModalViewportAtBottom)
       executionDetailsModalClose()
-  }, [isMutating])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPolling, executionDetailsModalClose])
 
   useEffect(() => {
     loadingOverlayVisible
       ? interval.start()
       : interval.stop()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingOverlayVisible])
 
   useEffect(() => {
@@ -152,7 +160,7 @@ export default function Card({
     executionDetailsModalVisible
       && isModalViewportAtBottom
       && modalscrollToBottom()
-  }, [lastMessage, executionDetailsModalVisible, isModalViewportAtBottom])
+  }, [lastMessage, executionDetailsModalVisible, isModalViewportAtBottom, modalscrollToBottom])
 
   const ModalScrollAreaComponent = useCallback((props: any) => (
     <ScrollArea.Autosize
@@ -169,6 +177,7 @@ export default function Card({
       padding='lg'
       radius='md'
       onMouseDown={(e) => {
+        if (loadingOverlayVisible) return
         // on middle click
         if (e.button === 1) {
           onSelect?.(!selected)
@@ -236,7 +245,10 @@ export default function Card({
           <ActionIcon
             color='gray'
             variant='transparent'
-            onClick={() => refetch()}
+            onClick={() => {
+              refetch()
+              deleteSelectedService(`${stackName}/${serviceName}`)
+            }}
           >
             <IconRefresh
               size={20}
@@ -379,6 +391,7 @@ export default function Card({
 
       <Group pos='absolute' bottom={12.5} right={20} style={{ zIndex: 999 }}>
         {
+          !loadingOverlayVisible &&
           <ActionIcon
             size='sm'
             variant='transparent'

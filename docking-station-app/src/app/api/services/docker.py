@@ -366,7 +366,7 @@ def update_compose_stack_ws(stack_name: str,
             )
 
         if app_settings.server.dryrun:
-            n = 25
+            n = 50
             for i in range(1, n + 1):
                 queue.put_nowait(
                     MessageDict(
@@ -377,7 +377,7 @@ def update_compose_stack_ws(stack_name: str,
                 await asyncio.sleep(0.1)
 
         if app_settings.server.dryrun:
-            n = 25
+            n = 50
             for i in range(1, n + 1):
                 queue.put_nowait(
                     MessageDict(

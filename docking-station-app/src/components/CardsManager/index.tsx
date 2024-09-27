@@ -26,7 +26,7 @@ export default function CardsManager() {
     selected
       ? addSelectedService(`${stackName}/${serviceName}`)
       : deleteSelectedService(`${stackName}/${serviceName}`)
-  }, [selectedServices])
+  }, [addSelectedService, deleteSelectedService])
 
   return (
     <div>
