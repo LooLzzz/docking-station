@@ -68,9 +68,6 @@ services:
   docking-station:
     image: loolzzz/docking-station
     restart: unless-stopped
-    # environment:
-    #   - WEB_PORT=3000
-    #   - SERVER_PORT=3001
     ports:
       - 3000:3000
     volumes:

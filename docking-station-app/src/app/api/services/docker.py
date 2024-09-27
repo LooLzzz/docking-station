@@ -5,10 +5,8 @@ from threading import Thread
 
 from fastapi import HTTPException
 from python_on_whales import DockerClient, docker
-from python_on_whales.components.container.cli_wrapper import \
-    Container as WhalesContainer
-from python_on_whales.components.container.cli_wrapper import \
-    DockerContainerListFilters
+from python_on_whales.components.container.cli_wrapper import Container as WhalesContainer
+from python_on_whales.components.container.cli_wrapper import DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
 from ..schemas import DockerContainer, DockerImage, DockerStack, MessageDict

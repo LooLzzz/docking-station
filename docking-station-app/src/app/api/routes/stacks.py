@@ -124,17 +124,23 @@ async def poll_compose_stack_service_update_task(stack: str,
                                                  offset: int | None = None):
     key: StoreKey = (stack, service)
 
-    if not (task := task_store.get(key, None)):
-        return JSONResponse(
-            content={'detail': f"Compose stack service task '{stack}/{service}' not found"},
-            status_code=404,
-        )
+    try:
+        if not (task := task_store.get(key, None)):
+            return JSONResponse(
+                content={'detail': f"Compose stack service task '{stack}/{service}' not found"},
+                status_code=404,
+            )
 
-    if not task.is_worker_alive():
-        cache_backend = FastAPICache.get_backend()
-        cache_key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
-        await cache_backend.clear(namespace=cache_key)
+        if not task.is_worker_alive():
+            cache_backend = FastAPICache.get_backend()
+            cache_key, *_ = cache_key_builder(list_compose_stacks).split('(', 1)
+            await cache_backend.clear(namespace=cache_key)
 
-        task.join()  # re-raise any exceptions from the task
+            task.join()  # re-raise any exceptions from the task
+
+    except Exception as _exc:
+        """ exception handling for 'task.join()' """
+        logger.exception("Error occurred while polling task thread for '%s/%s'", stack, service)
+        raise
 
     return task.messages[offset:]
