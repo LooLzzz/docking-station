@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/LooLzzz/docking-station/compare/v0.4.0...v0.4.1) (2024-09-27)
+
+
+### Bug Fixes
+
+* **web-ui:** fixed infinite re-rendering loop caused by 'useInterval' ([de58a1e](https://github.com/LooLzzz/docking-station/commit/de58a1eb2e408271ab1cae76657777a6850f56f2))
+
 ## [0.4.0](https://github.com/LooLzzz/docking-station/compare/v0.3.2...v0.4.0) (2024-09-27)
 
 
