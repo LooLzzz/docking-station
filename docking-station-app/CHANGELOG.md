@@ -1,12 +1,16 @@
 # Changelog
 
-## 0.3.2 (2024-09-27)
+## [0.3.2](https://github.com/LooLzzz/docking-station/compare/v0.3.2...v0.3.2) (2024-09-27)
 
 
 ### Bug Fixes
 
 * **server:** better error logging for 'poll_compose_stack_service_update_task' ([3e53f8b](https://github.com/LooLzzz/docking-station/commit/3e53f8ba889fd92af014759abcaf365fbd2aff0f))
 
+
+### Miscellaneous Chores
+
+* **build:** created release-please config & manifest files ([525076a](https://github.com/LooLzzz/docking-station/commit/525076ad26a50effdb2cd75718fb6f7982e2ffdf))
 
 ## [0.3.1](https://github.com/LooLzzz/docking-station/compare/v0.3.0...v0.3.1) (2024-09-22)
 
