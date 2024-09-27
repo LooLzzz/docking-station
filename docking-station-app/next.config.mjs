@@ -1,4 +1,5 @@
 import withPWA from '@ducanh2912/next-pwa'
+import packageJson from './package.json' assert { type: 'json' }
 
 const NODE_ENV = process.env.NODE_ENV ?? 'development'
 const SERVER_PORT = process.env.SERVER_PORT ?? 3001
@@ -6,6 +7,10 @@ const SERVER_PORT = process.env.SERVER_PORT ?? 3001
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+
+  env: {
+    NPM_PACKAGE_VERSION: packageJson.version,
+  },
 
   webpack: (config) => {
     // Grab the existing rule that handles SVG imports

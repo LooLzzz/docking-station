@@ -7,10 +7,13 @@ import { useListComposeStacks } from '@/hooks/stacks'
 import {
   ActionIcon,
   AppShell,
+  Box,
   Center,
   Container,
   Group,
+  Stack,
   Switch,
+  Text,
   Tooltip,
   rem,
   useMantineColorScheme,
@@ -94,8 +97,23 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
       </AppShell.Header>
 
       <AppShell.Main>
-        {children}
+        <Stack>
+          {children}
+
+          <Box ta='right'>
+            <Text
+              span
+              component='a'
+              fz='xs'
+              opacity={0.65}
+              href={`https://github.com/LooLzzz/docking-station/releases/tag/v${process.env.NPM_PACKAGE_VERSION}`}
+            >
+              v{process.env.NPM_PACKAGE_VERSION}
+            </Text>
+          </Box>
+        </Stack>
       </AppShell.Main>
+
 
     </AppShell>
   )
