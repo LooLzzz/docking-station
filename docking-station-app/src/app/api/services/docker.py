@@ -374,28 +374,27 @@ def update_compose_stack_ws(stack_name: str,
                 )
                 await asyncio.sleep(0.1)
 
-        if app_settings.server.dryrun:
-            n = 50
-            for i in range(1, n + 1):
-                queue.put_nowait(
-                    MessageDict(
-                        stage='docker image prune',
-                        message=f'test line {i}/{n}',
+        if prune_images:
+            if app_settings.server.dryrun:
+                n = 50
+                for i in range(1, n + 1):
+                    queue.put_nowait(
+                        MessageDict(
+                            stage='docker image prune',
+                            message=f'test line {i}/{n}',
+                        )
                     )
-                )
-                await asyncio.sleep(0.1)
-
-        if prune_images and not app_settings.server.dryrun:
-            stdout = subprocess_stream_generator([
-                'docker', 'image', 'prune', '-f'
-            ])
-            for line in stdout:
-                queue.put_nowait(
-                    MessageDict(
-                        stage='docker image prune',
-                        message=line,
+            else:
+                stdout = subprocess_stream_generator([
+                    'docker', 'image', 'prune', '-f'
+                ])
+                for line in stdout:
+                    queue.put_nowait(
+                        MessageDict(
+                            stage='docker image prune',
+                            message=line,
+                        )
                     )
-                )
 
         await queue.put(
             MessageDict(

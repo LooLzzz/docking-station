@@ -12,6 +12,8 @@ import FiltersPane from './FiltersPane'
 export default function SearchBar() {
   const [
     searchValue,
+    maturedUpdatesOnly,
+    updatesOnly,
     isFiltersActive,
     selectedServices,
     setSearchValue,
@@ -19,6 +21,8 @@ export default function SearchBar() {
     clearSelectedServices,
   ] = useFiltersStore(state => [
     state.searchValue,
+    state.maturedUpdatesOnly,
+    state.updatesOnly,
     state.isFiltersActive,
     state.selectedServices,
     state.setSearchValue,
@@ -47,9 +51,12 @@ export default function SearchBar() {
   }, [textInputRef])
 
   useEffect(() => {
-    setSearchValue(searchValueDebounced)
     clearSelectedServices()
-  }, [searchValueDebounced, setSearchValue, clearSelectedServices])
+  }, [searchValue, maturedUpdatesOnly, updatesOnly, clearSelectedServices])
+
+  useEffect(() => {
+    setSearchValue(searchValueDebounced)
+  }, [searchValueDebounced, setSearchValue])
 
   useWindowEvent('keydown', windowKeydownHandler)
 
@@ -116,10 +123,10 @@ export default function SearchBar() {
         }}
         c={
           filteredServices.length === 0 || isFetching
-            ? 'gray.7'
+            ? (colorScheme == 'dark' ? 'gray.7' : 'gray.4')
             : filteredServices.length && selectedServices.size === filteredServices.length
               ? undefined
-              : 'gray.4'
+              : (colorScheme == 'dark' ? 'gray.4' : 'gray.7')
         }
       >
         {

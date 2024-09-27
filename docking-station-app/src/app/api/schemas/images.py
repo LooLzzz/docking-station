@@ -35,7 +35,8 @@ class DockerImage(AliasedBaseModel):
     @computed_field
     @property
     def image_tag(self) -> str:
-        return self.repo_tag.split(':', 1)[1]
+        _, *tag = self.repo_tag.split(':', 1)
+        return tag[0] if tag else ''
 
 
 class DockerImageResponse(AliasedBaseModel):

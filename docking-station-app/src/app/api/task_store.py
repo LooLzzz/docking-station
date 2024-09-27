@@ -61,8 +61,6 @@ class TaskStore(metaclass=Singleton):
         raise KeyError(key)
 
     def __setitem__(self, key: StoreKey, item: TaskStoreItem | TaskStoreItemDict):
-        print('creating', key)
-
         match item:
             case dict():
                 self.create_task(key, **item)
@@ -80,7 +78,6 @@ class TaskStore(metaclass=Singleton):
 
         if (not item or (not item.is_worker_alive()
                          and datetime.now() - item.timestamp > self.ttl)):
-            print('deleting', key)
             self._store.pop(key, None)
             return default
 

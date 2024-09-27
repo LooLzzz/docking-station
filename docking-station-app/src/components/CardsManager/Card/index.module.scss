@@ -1,3 +1,6 @@
+$selected-border-color: var(--mantine-color-default-border);
+// $selected-border-color: color-mix(in srgb, var(--mantine-primary-color-4), transparent 50%);
+
 .container {
   .selectIcon {
     opacity: 0;
@@ -7,5 +10,20 @@
   &:hover .selectIcon,
   .selectIcon[data-checked] {
     opacity: 1;
+  }
+
+  &[data-selected]::before {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: solid 2px $selected-border-color;
+    border-top: solid 3px $selected-border-color;
+    border-bottom: solid 3px $selected-border-color;
+    border-radius: var(--mantine-radius-md);
   }
 }

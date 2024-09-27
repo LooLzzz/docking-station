@@ -173,12 +173,13 @@ export default function Card({
   return (
     <MantineCard
       withBorder
+      data-selected={(selected && !loadingOverlayVisible) || undefined}
       pos='relative'
       padding='lg'
       radius='md'
       onMouseDown={(e) => {
+        // on middle-mouse click
         if (loadingOverlayVisible) return
-        // on middle click
         if (e.button === 1) {
           onSelect?.(!selected)
           e.preventDefault()

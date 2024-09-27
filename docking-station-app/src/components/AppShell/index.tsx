@@ -53,7 +53,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     state.selectedServices,
     state.clearSelectedServices,
   ])
-  const createUpdateComposeStackTask = useCreateUpdateComposeStackTask()
+  const createUpdateComposeStackTask = useCreateUpdateComposeStackTask({ pruneImages: true })
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const { data: stacks = [], refetch: refetchComposeStacks } = useListComposeStacks({
     enabled: false,  // no auto-fetch
@@ -149,7 +149,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
                 label={selectedServicesKeys.size ? 'Update Selected' : 'Update All'}
               >
                 <ActionIcon
-                  c={selectedServicesWithUpdates.length ? 'gray.4' : 'gray.7'}
+                  c={selectedServicesWithUpdates.length ? 'gray' : (colorScheme == 'dark' ? 'gray.7' : 'gray.4')}
                   disabled={!selectedServicesWithUpdates.length}
                   variant='transparent'
                   onClick={openUpdateSelectedConfirmModal}
