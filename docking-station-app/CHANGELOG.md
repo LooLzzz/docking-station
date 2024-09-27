@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/LooLzzz/docking-station/compare/v0.3.2...v0.4.0) (2024-09-27)
+
+
+### Features
+
+* **web-ui:** [#33](https://github.com/LooLzzz/docking-station/issues/33) - added services selection + "update selected" and "refresh selected" options ([617312d](https://github.com/LooLzzz/docking-station/commit/617312d47d93650c1fb86124334c68a3aae0a255))
+
 ## [0.3.2](https://github.com/LooLzzz/docking-station/compare/v0.3.2...v0.3.2) (2024-09-27)
 
 
