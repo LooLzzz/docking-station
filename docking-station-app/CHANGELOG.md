@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/LooLzzz/docking-station/compare/v0.4.1...v0.4.2) (2024-09-28)
+
+
+### Bug Fixes
+
+* **web-ui:** correct computed min-height for 'CardsManager' component ([6b7de56](https://github.com/LooLzzz/docking-station/commit/6b7de56cf94ed8b6eee438367e1ba67162166a8f))
+* **web-ui:** fixed 'Refresh All' refreshing each service individually instead of using the 'refetchComposeStacks' hook ([7a773d2](https://github.com/LooLzzz/docking-station/commit/7a773d21b12ded8295696130ce77aab6d739fdfd))
+
 ## [0.4.1](https://github.com/LooLzzz/docking-station/compare/v0.4.0...v0.4.1) (2024-09-27)
 
 
