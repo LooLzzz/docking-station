@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/LooLzzz/docking-station/compare/v0.4.1...v0.4.2) (2024-09-28)
+
+
+### Bug Fixes
+
+* **web-ui:** fixed 'Refresh All' refreshing each service individually instead of using the 'refetchComposeStacks' hook ([94de0a6](https://github.com/LooLzzz/docking-station/commit/94de0a639a97cd7faf8ae47fcb4115dc89690b92))
+
 ## [0.4.1](https://github.com/LooLzzz/docking-station/compare/v0.4.0...v0.4.1) (2024-09-27)
 
 
