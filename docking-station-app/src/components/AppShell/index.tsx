@@ -13,7 +13,6 @@ import {
   Code,
   Container,
   Group,
-  Stack,
   Switch,
   Text,
   Tooltip,
@@ -23,7 +22,7 @@ import {
 } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { IconCloudDownload, IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 
 const SunIcon = () => {
   const theme = useMantineTheme()
@@ -55,6 +54,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     state.selectedServices,
     state.clearSelectedServices,
   ])
+  const appShellHeaderRef = useRef<HTMLDivElement>(null)
   const createUpdateComposeStackTask = useCreateUpdateComposeStackTask({ pruneImages: true })
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const { data: stacks = [], refetch: refetchComposeStacks } = useListComposeStacks({
@@ -130,7 +130,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
       padding='md'
     >
 
-      <AppShell.Header>
+      <AppShell.Header ref={appShellHeaderRef}>
         <Container h='100%' size={1375}>
           <Group h='100%' justify='space-between' wrap='nowrap'>
             <DockingStationLogo
@@ -147,12 +147,12 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
             <Center component={Group} gap={5} wrap='nowrap'>
               <Tooltip
                 withArrow
-                disabled={!selectedServicesWithUpdates.length}
+                disabled={!stacks.length || !selectedServicesWithUpdates.length}
                 label={selectedServicesKeys.size ? 'Update Selected' : 'Update All'}
               >
                 <ActionIcon
                   c={selectedServicesWithUpdates.length ? 'gray' : (colorScheme == 'dark' ? 'gray.7' : 'gray.4')}
-                  disabled={!selectedServicesWithUpdates.length}
+                  disabled={!stacks.length || !selectedServicesWithUpdates.length}
                   variant='transparent'
                   onClick={openUpdateSelectedConfirmModal}
                 >
@@ -164,10 +164,12 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
               </Tooltip>
               <Tooltip
                 withArrow
+                disabled={!stacks.length}
                 label={selectedServicesKeys.size ? 'Refresh Selected' : 'Refresh All'}
               >
                 <ActionIcon
                   color='gray'
+                  disabled={!stacks.length}
                   variant='transparent'
                   onClick={handleRefreshSelected}
                 >
@@ -191,21 +193,21 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
       </AppShell.Header>
 
       <AppShell.Main>
-        <Stack>
+        <Box mih={`calc(100vh - 2 * ${appShellHeaderRef.current?.clientHeight ?? 64}px)`}>
           {children}
+        </Box>
 
-          <Box ta='right'>
-            <Text
-              span
-              component='a'
-              fz='xs'
-              opacity={0.65}
-              href={`https://github.com/LooLzzz/docking-station/releases/tag/v${process.env.NPM_PACKAGE_VERSION}`}
-            >
-              v{process.env.NPM_PACKAGE_VERSION}
-            </Text>
-          </Box>
-        </Stack>
+        <Box ta='right'>
+          <Text
+            span
+            component='a'
+            fz='xs'
+            opacity={0.65}
+            href={`https://github.com/LooLzzz/docking-station/releases/tag/v${process.env.NPM_PACKAGE_VERSION}`}
+          >
+            v{process.env.NPM_PACKAGE_VERSION}
+          </Text>
+        </Box>
       </AppShell.Main>
 
 
