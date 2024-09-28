@@ -62,9 +62,10 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     meta: { noCache: true },
   })
 
+  const services = stacks.flatMap(({ services }) => services)
+
   const selectedServices = (
-    stacks
-      .flatMap(({ services }) => services)
+    services
       .filter(({ stackName, serviceName }) => (
         !selectedServicesKeys.size
         || selectedServicesKeys.has(`${stackName}/${serviceName}`)
@@ -77,7 +78,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
   )
 
   const handleRefreshSelected = useCallback(() => {
-    if (!selectedServices.length) {
+    if (!selectedServices.length || services.length === selectedServices.length) {
       refetchComposeStacks()
     } else {
       selectedServices.forEach(async ({ stackName, serviceName }) => {
@@ -89,7 +90,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
         clearSelectedServices()
       })
     }
-  }, [selectedServices, refetchComposeStacks, clearSelectedServices])
+  }, [selectedServices, services, refetchComposeStacks, clearSelectedServices])
 
   const openUpdateSelectedConfirmModal = useCallback(() => modals.openConfirmModal({
     centered: true,
@@ -165,7 +166,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
               <Tooltip
                 withArrow
                 disabled={!stacks.length}
-                label={selectedServicesKeys.size ? 'Refresh Selected' : 'Refresh All'}
+                label={!selectedServices.length || services.length === selectedServices.length ? 'Refresh All' : 'Refresh Selected'}
               >
                 <ActionIcon
                   color='gray'
@@ -209,7 +210,6 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
           </Text>
         </Box>
       </AppShell.Main>
-
 
     </AppShell>
   )
