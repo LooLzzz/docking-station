@@ -21,30 +21,9 @@ import {
   useMantineTheme
 } from '@mantine/core'
 import { modals } from '@mantine/modals'
-import { IconCloudDownload, IconMoonStars, IconRefresh, IconSun } from '@tabler/icons-react'
 import { useCallback, useRef } from 'react'
+import ActionView from '../ActionView'
 
-const SunIcon = () => {
-  const theme = useMantineTheme()
-  return (
-    <IconSun
-      style={{ width: rem(16), height: rem(16) }}
-      stroke={2.5}
-      color={theme.colors.yellow[4]}
-    />
-  )
-}
-
-const MoonIcon = () => {
-  const theme = useMantineTheme()
-  return (
-    <IconMoonStars
-      style={{ width: rem(16), height: rem(16) }}
-      stroke={2.5}
-      color={theme.colors.blue[6]}
-    />
-  )
-}
 
 export default function BasicAppShell({ children }: { children: React.ReactNode }) {
   const [
@@ -144,51 +123,7 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
             <Center flex={1}>
               <SearchBar />
             </Center>
-
-            <Center component={Group} gap={5} wrap='nowrap'>
-              <Tooltip
-                withArrow
-                disabled={!stacks.length || !selectedServicesWithUpdates.length}
-                label={selectedServicesKeys.size ? 'Update Selected' : 'Update All'}
-              >
-                <ActionIcon
-                  c={selectedServicesWithUpdates.length ? 'gray' : (colorScheme == 'dark' ? 'gray.7' : 'gray.4')}
-                  disabled={!stacks.length || !selectedServicesWithUpdates.length}
-                  variant='transparent'
-                  onClick={openUpdateSelectedConfirmModal}
-                >
-                  <IconCloudDownload
-                    size={20}
-                    stroke={2.5}
-                  />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip
-                withArrow
-                disabled={!stacks.length}
-                label={!selectedServices.length || services.length === selectedServices.length ? 'Refresh All' : 'Refresh Selected'}
-              >
-                <ActionIcon
-                  color='gray'
-                  disabled={!stacks.length}
-                  variant='transparent'
-                  onClick={handleRefreshSelected}
-                >
-                  <IconRefresh
-                    size={20}
-                    stroke={2.5}
-                  />
-                </ActionIcon>
-              </Tooltip>
-              <Switch
-                size='md'
-                color='dark.4'
-                onLabel={<SunIcon />}
-                offLabel={<MoonIcon />}
-                checked={colorScheme === 'light'}
-                onChange={() => toggleColorScheme()}
-              />
-            </Center>
+            <ActionView onUpdate={openUpdateSelectedConfirmModal} onRefresh={handleRefreshSelected} />
           </Group>
         </Container>
       </AppShell.Header>
