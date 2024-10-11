@@ -4,7 +4,7 @@ from logging import getLogger
 from threading import Thread
 
 from fastapi import HTTPException
-from python_on_whales import DockerClient, docker
+from python_on_whales import DockerClient
 from python_on_whales.components.container.cli_wrapper import Container as WhalesContainer
 from python_on_whales.components.container.cli_wrapper import DockerContainerListFilters
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
@@ -27,6 +27,10 @@ __all__ = [
 
 logger = getLogger(__name__)
 app_settings = get_app_settings()
+docker = DockerClient(
+    client_type='docker',
+    **app_settings.server.python_on_whales__docker_client_config
+)
 
 
 async def list_containers(filters: DockerContainerListFilters = None,
