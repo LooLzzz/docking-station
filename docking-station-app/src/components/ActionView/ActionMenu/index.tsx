@@ -3,19 +3,19 @@
 import { useListComposeStacks } from '@/hooks/stacks'
 import { useFiltersStore } from '@/store'
 import {
-  ActionIcon,
   Burger,
   Center,
   Group,
   Menu,
-  Tooltip,
   useMantineColorScheme,
 } from '@mantine/core'
 import { IconCloudDownload, IconRefresh } from '@tabler/icons-react'
+import { useState } from 'react'
 import ThemeButton from '../../ThemeButton'
 
 export default function ActionMenu({ onUpdate, onRefresh }: { onUpdate: () => void, onRefresh: () => void }) {
   const { colorScheme } = useMantineColorScheme();
+  const [menuOpened, setMenuOpened] = useState(false);
   const { data: stacks = [] } = useListComposeStacks({
     enabled: false,
     meta: { noCache: true },
@@ -30,9 +30,9 @@ export default function ActionMenu({ onUpdate, onRefresh }: { onUpdate: () => vo
   const selectedServicesWithUpdates = (selectedServices.filter((service) => service.hasUpdates))
   return (
     <Center component={Group} gap={5} wrap='nowrap'>
-      <Menu withArrow transitionProps={{ transition: 'scale-y', duration: 100 }}>
+      <Menu withArrow transitionProps={{ transition: 'scale-y', duration: 100 }} onOpen={() => setMenuOpened(true)} onClose={() => setMenuOpened(false)}>
         <Menu.Target>
-          <Burger c={colorScheme == 'dark' ? 'gray.7' : 'gray.4'} />
+          <Burger c={colorScheme == 'dark' ? 'gray.7' : 'gray.4'} opened={menuOpened} aria-label='Menu' />
         </Menu.Target>
         <Menu.Dropdown>
           <Menu.Label>Actions</Menu.Label>
