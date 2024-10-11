@@ -115,10 +115,7 @@ export default function SearchBar() {
         variant='transparent'
         size='sm'
         onClick={() => {
-          selectedServices.size === filteredServices.length
-            ? clearSelectedServices()
-            : filteredServices.forEach(({ stackName, serviceName }) =>
-              addSelectedService(`${stackName}/${serviceName}`)
+          selectedServices.size === filteredServices.length ? clearSelectedServices() : filteredServices.forEach(({ stackName, serviceName }) => addSelectedService(`${stackName}/${serviceName}`)
             )
         }}
         c={
