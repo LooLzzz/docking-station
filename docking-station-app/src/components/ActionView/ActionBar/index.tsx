@@ -30,8 +30,7 @@ export default function Bar({ onUpdate, onRefresh }: { onUpdate: () => void, onR
     <Center component={Group} gap={5} wrap='nowrap'>
       <Tooltip
         withArrow
-        disabled={!stacks.length || !selectedServicesWithUpdates.length}
-        label={selectedServicesKeys.size ? 'Update Selected' : 'Update All'}
+        label={!selectedServicesKeys.size || selectedServicesKeys.size == selectedServices.length ? 'Update All' : 'Update Selected'}
       >
         <ActionIcon
           c={selectedServicesWithUpdates.length ? 'gray' : (colorScheme == 'dark' ? 'gray.7' : 'gray.4')}

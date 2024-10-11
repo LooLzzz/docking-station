@@ -30,14 +30,14 @@ export default function ActionMenu({ onUpdate, onRefresh }: { onUpdate: () => vo
   const selectedServicesWithUpdates = (selectedServices.filter((service) => service.hasUpdates))
   return (
     <Center component={Group} gap={5} wrap='nowrap'>
-      <Menu withArrow transitionProps={{ transition: 'slide-down', duration: 100 }}>
+      <Menu withArrow transitionProps={{ transition: 'scale-y', duration: 100 }}>
         <Menu.Target>
           <Burger c={colorScheme == 'dark' ? 'gray.7' : 'gray.4'} />
         </Menu.Target>
         <Menu.Dropdown>
           <Menu.Label>Actions</Menu.Label>
           <Menu.Item leftSection={<IconCloudDownload size={14} />} disabled={!stacks.length || !selectedServicesWithUpdates.length} onClick={onUpdate}>
-            {selectedServicesKeys.size ? 'Update Selected' : 'Update All'}
+            {!selectedServicesKeys.size || services.length == selectedServices.length ? 'Update All' : 'Update Selected'}
           </Menu.Item>
           <Menu.Item leftSection={<IconRefresh size={14} />} disabled={!stacks.length} onClick={onRefresh}>
             {!selectedServices.length || services.length === selectedServices.length ? 'Refresh All' : 'Refresh Selected'}
