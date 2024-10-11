@@ -10,9 +10,9 @@ import {
   useMantineColorScheme,
 } from '@mantine/core'
 import { IconCloudDownload, IconRefresh } from '@tabler/icons-react'
-import ThemeButton from '../../ThemeButton'
+import { ThemeButton } from '@/components'
 
-export default function Bar({ onUpdate, onRefresh }: { onUpdate: () => void, onRefresh: () => void }) {
+export default function ActionBar({ onUpdate, onRefresh }: { onUpdate: () => void, onRefresh: () => void }) {
   const { colorScheme } = useMantineColorScheme();
   const { data: stacks = [] } = useListComposeStacks({
     enabled: false,  // no auto-fetch
@@ -63,7 +63,5 @@ export default function Bar({ onUpdate, onRefresh }: { onUpdate: () => void, onR
       </Tooltip>
       <ThemeButton />
     </Center>
-
-
   )
 }
