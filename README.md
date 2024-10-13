@@ -24,6 +24,13 @@ Check [settings.template.yml](./settings.template.yml) for a list of all availab
 - time_until_update_is_mature
   - Time in seconds until an update is considered mature
   - Accepts human readable suffixes (e.g. `1h`, `1d`, `1w`)
+- python_on_whales__docker_client_config
+  - Any settings that can be passed to `python-on-whales`'s `DockerClient`
+  - Used to set remote docker host, etc
+  - See https://gabrieldemarmiesse.github.io/python-on-whales/docker_client for more info
+- python_on_whales__ignored_image_prefixes
+  - List of prefixes to strip from image names when querying the docker daemon, see #7
+  - If you don't know what this is, you probably don't need to change it
 - Auto-updater: **(NOT TESTED - Use at your own risk)**
   - Disabled by default
   - interval
