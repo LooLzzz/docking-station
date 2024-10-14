@@ -277,6 +277,12 @@ export default function Card({
             truncate='end'
             fw='bold'
             maw={rem(data?.hasUpdates ? 160 : 190)}
+            onMouseDown={(e) => {
+              // on middle-mouse click
+              if (e.button === 1) {
+                e.stopPropagation()
+              }
+            }}
           >
             {data?.name}
           </Text>
