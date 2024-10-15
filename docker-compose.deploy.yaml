@@ -1,7 +1,19 @@
 
 services:
-  docking-station:
+  prod:
     build:
       context: .
       dockerfile: Dockerfile.deploy
     image: loolzzz/docking-station
+
+  qa:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    image: loolzzz/docking-station:qa
+
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    image: loolzzz/docking-station:dev
