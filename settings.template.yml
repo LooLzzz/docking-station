@@ -12,6 +12,9 @@ server:
   possible_image_version_labels:  # order matters!
     - org.label-schema.version
     - org.opencontainers.image.version
+  # python_on_whales__docker_client_config:
+  #   # https://gabrieldemarmiesse.github.io/python-on-whales/docker_client/
+  #   host: unix:///var/run/docker.sock
   python_on_whales__ignored_image_prefixes:
     - docker.io/library/
     - docker.io/
