@@ -7,6 +7,7 @@
 
 * **web-ui:** Make ActionBar more responsive ([#49](https://github.com/LooLzzz/docking-station/issues/49)) ([26b3ce9](https://github.com/LooLzzz/docking-station/commit/26b3ce9fa125b0c2120b0fef0e7ec18fa4b49789))
 
+* **deploy** Use TARGETPLATFORM variable for regctl download URL ([#59](https://github.com/LooLzzz/docking-station/issues/59)) ([d4b27a5](https://github.com/LooLzzz/docking-station/commit/d4b27a5c0c3d75d93191d3512ec8d6d0bbb30f24))
 
 ### Bug Fixes
 
