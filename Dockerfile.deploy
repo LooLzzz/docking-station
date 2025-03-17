@@ -31,6 +31,8 @@ RUN npm run build
 FROM python:3.12-slim AS runner
 WORKDIR /app
 
+ARG TARGETPLATFORM
+
 ENV NODE_ENV production
 ENV WEB_PORT 3000
 ENV SERVER_PORT 3001
@@ -57,7 +59,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 # install regctl: https://github.com/regclient/regclient
 RUN npm install --g concurrently \
     && curl -fsSL https://get.docker.com | bash \
-    && curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/bin/regctl \
+    && curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-${TARGETPLATFORM##*/} > /usr/bin/regctl \
     && chmod 755 /usr/bin/regctl
 
 RUN mkdir -p /app/docking-station-app/.next \

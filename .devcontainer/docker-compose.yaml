@@ -13,7 +13,7 @@ services:
       - ..:/workspaces/docking-station:cached
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/localtime:/etc/localtime:ro
-      - /mnt/appdata/compose-files:/mnt/appdata/compose-files
+      - ./appdata/compose-files:/mnt/appdata/compose-files
     labels:
       # for homepage dashboard widget. More info: https://gethomepage.dev/latest/configs/docker/#automatic-service-discovery
       - homepage.group=Dev Containers
