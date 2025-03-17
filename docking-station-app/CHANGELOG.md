@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/LooLzzz/docking-station/compare/v0.4.2...v0.5.0) (2025-03-17)
+
+
+### Features
+
+* **web-ui:** Make ActionBar more responsive ([#49](https://github.com/LooLzzz/docking-station/issues/49)) ([26b3ce9](https://github.com/LooLzzz/docking-station/commit/26b3ce9fa125b0c2120b0fef0e7ec18fa4b49789))
+
+* **deploy** Use TARGETPLATFORM variable for regctl download URL ([#59](https://github.com/LooLzzz/docking-station/issues/59)) ([d4b27a5](https://github.com/LooLzzz/docking-station/commit/d4b27a5c0c3d75d93191d3512ec8d6d0bbb30f24))
+
+### Bug Fixes
+
+* **web-ui:** stop middle mouse event propagation when clicking on container name ([a93c7c2](https://github.com/LooLzzz/docking-station/commit/a93c7c21f94b776177d4b7e575895f8fe668b5dc))
+
 ## [0.4.2](https://github.com/LooLzzz/docking-station/compare/v0.4.1...v0.4.2) (2024-09-28)
 
 
