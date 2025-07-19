@@ -1,0 +1,29 @@
+{
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "always"
+      // "source.organizeImports.ruff": "always",
+    },
+    "editor.defaultFormatter": "ms-python.autopep8",
+    // "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file"
+  },
+  "autopep8.args": [
+    "--max-line-length=120",
+    "--ignore=E731" // Do not assign a lambda expression, use a def (E731)
+  ],
+  "editor.renderWhitespace": "trailing",
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "cmd": "${workspaceFolder}/docking-station-app/.venv/bin/sort-all ${file}",
+        "isAsync": true,
+        "match": "\\.py$"
+      }
+    ]
+  },
+  "isort.args": [
+    "--line-length=120"
+  ]
+}

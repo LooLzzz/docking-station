@@ -20,19 +20,26 @@
     "remoteUser": "root",
     "customizations": {
         "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "python.defaultInterpreterPath": "${workspaceFolder}/docking-station-app/.venv/bin/python"
+            },
             "extensions": [
+                "emeraldwalk.runonsave",
                 "formulahendry.auto-complete-tag",
                 "Gruntfuggly.todo-tree",
                 "maattdd.gitless",
                 "mhutchie.git-graph",
-                "MohammadBaqer.better-folding",
+                // "MohammadBaqer.better-folding",
                 "ms-azuretools.vscode-docker",
                 "ms-python.autopep8",
                 "ms-python.isort",
                 "ms-python.python",
+                "prasadgk.pythoncodelens",
                 "qwtel.sqlite-viewer",
                 "rangav.vscode-thunder-client",
                 "richie5um2.vscode-sort-json",
+                "tamasfe.even-better-toml",
                 "wmaurer.change-case",
                 "YoavBls.pretty-ts-errors"
             ]

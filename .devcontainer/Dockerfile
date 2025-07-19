@@ -16,11 +16,22 @@ RUN curl -fsSL https://get.docker.com | bash
 RUN curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/bin/regctl
 RUN chmod 755 /usr/bin/regctl
 
+# install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | bash
+
 # install bun
 RUN curl -fsSL https://bun.sh/install | bash
 
 # install concurrently package for running multiple commands
 # https://www.npmjs.com/package/concurrently
 RUN npm install -g concurrently
+
+# change default shell to zsh
+RUN chsh -s $(which zsh) \
+    && echo "\nalias ll=\"ls -la\"" >> /root/.zshrc \
+    && echo "\nexport PATH=$PATH:/root/.local/bin" >> /root/.zshrc \
+    && echo "\n# bun" >> /root/.zshrc \
+    && echo "export BUN_INSTALL=\"\$HOME/.bun\"" >> /root/.zshrc \
+    && echo "export PATH=\"\$BUN_INSTALL/bin:\$PATH\"" >> /root/.zshrc
 
 CMD [ "sleep", "infinity" ]

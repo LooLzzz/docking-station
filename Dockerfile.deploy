@@ -5,11 +5,20 @@ FROM node:18-alpine AS base
 FROM base AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat unzip \
-    && curl -fsSL https://bun.sh/install | sh
+    && curl -fsSL https://bun.sh/install | sh \
+    && curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install dependencies based on the preferred package manager
-COPY docking-station-app/package.json docking-station-app/package-lock.json ./
+# Install dependencies based on the preferred package managers
+COPY docking-station-app/package.json \
+     docking-station-app/package-lock.json \
+     docking-station-app/pyproject.toml \
+     ./
+
+# install node dependencies
 RUN npm install
+
+# convert pyproject.toml -> requirements.txt
+RUN uv pip compile pyproject.toml -o requirements.txt
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -33,9 +42,9 @@ WORKDIR /app
 
 ARG TARGETPLATFORM
 
-ENV NODE_ENV production
-ENV WEB_PORT 3000
-ENV SERVER_PORT 3001
+ENV NODE_ENV=production
+ENV WEB_PORT=3000
+ENV SERVER_PORT=3001
 
 EXPOSE ${WEB_PORT}
 EXPOSE ${SERVER_PORT}
@@ -69,7 +78,7 @@ RUN mkdir -p /app/docking-station-app/.next \
     && ln -snf /app/logs /logs
 
 # Install python dependencies
-COPY ./docking-station-app/requirements.txt /app/docking-station-app/requirements.txt
+COPY --from=builder requirements.txt /app/docking-station-app/requirements.txt
 COPY ./docking-station-app/src/app/api /app/docking-station-app/src/app/api
 RUN export PYTHONDONTWRITEBYTECODE=1 \
     && python3 -m pip install --no-cache-dir -r /app/docking-station-app/requirements.txt
