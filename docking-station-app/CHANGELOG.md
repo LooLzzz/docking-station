@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/LooLzzz/docking-station/compare/v0.6.0...v0.6.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* **ui:** added missing 'host' field on service card ([aa64378](https://github.com/LooLzzz/docking-station/commit/aa6437834e5908fc0c6feffe769577f556f30061))
+
 ## [0.6.0](https://github.com/LooLzzz/docking-station/compare/v0.5.0...v0.6.0) (2026-04-10)
 
 
