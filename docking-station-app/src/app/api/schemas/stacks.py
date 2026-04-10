@@ -1,4 +1,3 @@
-from collections import defaultdict
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
@@ -7,12 +6,12 @@ from .common import AliasedBaseModel, CamelCaseAliasedBaseModel, IterableRootMod
 from .containers import DockerContainer
 
 __all__ = [
-    'DockerStack',
-    'DockerStackBatchUpdateRequest',
-    'DockerStackResponse',
-    'DockerStackRootModel',
-    'DockerStackUpdateRequest',
-    'DockerStackUpdateResponse',
+    "DockerStack",
+    "DockerStackBatchUpdateRequest",
+    "DockerStackResponse",
+    "DockerStackRootModel",
+    "DockerStackUpdateRequest",
+    "DockerStackUpdateResponse",
 ]
 
 
@@ -21,6 +20,7 @@ class DockerStack(AliasedBaseModel):
     created: int = 0
     dead: int = 0
     exited: int = 0
+    host: str = 'localhost'
     paused: int = 0
     restarting: int = 0
     running: int = 0
@@ -30,6 +30,7 @@ class DockerStack(AliasedBaseModel):
     @computed_field
     @property
     def has_updates(self) -> bool:
+        return True
         return any(
             item.image.has_updates
             for item in self.services
@@ -54,18 +55,10 @@ class DockerStackUpdateRequest(CamelCaseAliasedBaseModel):
 
 
 class DockerStackBatchUpdateRequest(CamelCaseAliasedBaseModel):
-    services: list[str]
+    services: list[tuple[str, str]] = Field(description='List of (host, service_name) tuples')
     infer_envfile: bool = True
     prune_images: bool = False
     restart_containers: bool = True
-
-    @property
-    def stack_services(self) -> dict[str, list[str]]:
-        res = defaultdict(list)
-        for item in self.services:
-            stack, service = item.split('/')
-            res[stack].append(service)
-        return dict(res)
 
 
 class DockerStackResponse(DockerStack):

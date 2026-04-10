@@ -17,17 +17,19 @@ import { useAppSettings } from './appSettings'
 import { parseDockerContainerDates, parseDockerStackDates } from './utils'
 
 export interface StackServiceRefreshEventDetail {
+  host: string
   stackName: string
   serviceName: string
 }
 
 export interface StacksTaskCreateEventDetail {
+  host: string
   stackName: string
   serviceNames: string[]
 }
 
-export const useGetComposeService = <TData extends DockerContainer>(stackName: string, serviceName: string, options: Omit<Omit<UseQueryOptions<TData>, 'queryKey'>, 'queryKey'> = {}) => {
-  const queryKey = ['stacks', stackName, serviceName]
+export const useGetComposeService = <TData extends DockerContainer>(host: string, stackName: string, serviceName: string, options: Omit<Omit<UseQueryOptions<TData>, 'queryKey'>, 'queryKey'> = {}) => {
+  const queryKey = ['stacks', host, stackName, serviceName]
   const client = useQueryClient()
 
   const { refetch, ...rest } = useQuery<TData>({
@@ -38,14 +40,14 @@ export const useGetComposeService = <TData extends DockerContainer>(stackName: s
       const { data } = await axios.get<DockerContainerResponse>(
         apiRoutes.getComposeService(stackName, serviceName),
         {
-          params: noCache ? { no_cache: true } : undefined,
+          params: { host, ...(noCache ? { no_cache: true } : undefined) },
         },
       )
       const parsedData = parseDockerContainerDates(data) as TData
 
       client.setQueryData<DockerStack[]>(['stacks'], input => (
         (input ?? []).map(stack => (
-          stack.name !== stackName
+          stack.name !== stackName || stack.host !== host
             ? stack
             : {
               ...stack,
@@ -70,7 +72,8 @@ export const useGetComposeService = <TData extends DockerContainer>(stackName: s
   const handleStackServiceRefreshEvent = useCallback(
     (({ detail }: CustomEvent<StackServiceRefreshEventDetail>) => {
       if (
-        detail.stackName === stackName
+        detail.host === host
+        && detail.stackName === stackName
         && detail.serviceName === serviceName
       ) refetch()
     }) as EventListener, [refetch])
@@ -107,7 +110,7 @@ export const useListComposeStacks = <TData extends DockerStack[]>(options: Omit<
 
       stacks.forEach(stack => {
         stack.services.forEach(service => {
-          client.setQueryData(['stacks', service.stackName, service.serviceName], service)
+          client.setQueryData(['stacks', service.host, service.stackName, service.serviceName], service)
         })
       })
 
@@ -179,8 +182,8 @@ export const useListComposeServicesFiltered = <TData extends DockerStack[]>(opti
   }
 }
 
-export const useGetComposeStack = <TData extends DockerStack>(stackName: string, options: Omit<UseQueryOptions<TData>, 'queryKey'> = {}) => {
-  const queryKey = ['stacks', stackName]
+export const useGetComposeStack = <TData extends DockerStack>(host: string, stackName: string, options: Omit<UseQueryOptions<TData>, 'queryKey'> = {}) => {
+  const queryKey = ['stacks', host, stackName]
   const client = useQueryClient()
 
   return useQuery<TData>({
@@ -191,13 +194,13 @@ export const useGetComposeStack = <TData extends DockerStack>(stackName: string,
       const { data } = await axios.get<DockerStackResponse>(
         apiRoutes.getComposeStack(stackName),
         {
-          params: noCache ? { no_cache: true } : undefined,
+          params: { host, ...(noCache ? { no_cache: true } : undefined) },
         }
       )
       const stack = parseDockerStackDates(data) as TData
 
       stack.services.forEach(service => {
-        client.setQueryData(['stacks', stackName, service.serviceName], service)
+        client.setQueryData(['stacks', host, stackName, service.serviceName], service)
       })
 
       return stack
@@ -226,8 +229,8 @@ export const useCreateUpdateComposeStackTask = (options: DockerServiceUpdateRequ
     })
   }
 
-  const createTask = useCallback(async (stackName: string, serviceNames: string[]) => {
-    const queryPartialKey = ['stacks', 'task', 'create', stackName]
+  const createTask = useCallback(async (host: string, stackName: string, serviceNames: string[]) => {
+    const queryPartialKey = ['stacks', 'task', 'create', host, stackName]
     const queryKey = [...queryPartialKey, Object.fromEntries(serviceNames.map(x => [x, true]))]
 
     try {
@@ -245,7 +248,7 @@ export const useCreateUpdateComposeStackTask = (options: DockerServiceUpdateRequ
             apiRoutes.createComposeBatchUpdateTask,
             {
               ...options,
-              services: serviceNames.map(serviceName => (`${stackName}/${serviceName}`)),
+              services: serviceNames.map(serviceName => [host, `${stackName}/${serviceName}`]),
             },
           )
 
@@ -253,12 +256,13 @@ export const useCreateUpdateComposeStackTask = (options: DockerServiceUpdateRequ
         },
       })
 
-      console.log('dispatchEvent', 'stacks-task-create', { stackName, serviceNames })
+      console.log('dispatchEvent', 'stacks-task-create', { host, stackName, serviceNames })
       document.dispatchEvent(
         new CustomEvent<StacksTaskCreateEventDetail>(
           'stacks-task-create',
           {
             detail: {
+              host,
               stackName,
               serviceNames,
             },
@@ -274,11 +278,11 @@ export const useCreateUpdateComposeStackTask = (options: DockerServiceUpdateRequ
   return createTask
 }
 
-export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateWsMessage>(stackName: string, serviceName: string) => {
-  const stackServiceQueryKey = ['stacks', stackName, serviceName]
-  const pollTaskQueryKey = ['stacks', 'task', 'poll', stackName, serviceName]
-  const createTaskQueryKey = ['stacks', 'task', 'create', stackName, { [serviceName]: true }]
-  const createTaskPartialQueryKey = ['stacks', 'task', 'create', stackName]
+export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateWsMessage>(host: string, stackName: string, serviceName: string) => {
+  const stackServiceQueryKey = ['stacks', host, stackName, serviceName]
+  const pollTaskQueryKey = ['stacks', 'task', 'poll', host, stackName, serviceName]
+  const createTaskQueryKey = ['stacks', 'task', 'create', host, stackName, { [serviceName]: true }]
+  const createTaskPartialQueryKey = ['stacks', 'task', 'create', host, stackName]
 
   const queryClient = useQueryClient()
   const notificationsState = useNotifications()
@@ -310,7 +314,7 @@ export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateW
     setEnabled(false)
     document.dispatchEvent(
       new CustomEvent<StackServiceRefreshEventDetail>('stack-service-refresh', {
-        detail: { stackName, serviceName }
+        detail: { host, stackName, serviceName }
       })
     )
 
@@ -369,10 +373,11 @@ export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateW
 
   const handleStacksTaskCreateEvent = useCallback(({ detail }: CustomEvent<StacksTaskCreateEventDetail>) => {
     if (
-      detail.stackName === stackName
+      detail.host === host
+      && detail.stackName === stackName
       && detail.serviceNames.includes(serviceName)
     ) startPolling()
-  }, [stackName, serviceName, startPolling])
+  }, [host, stackName, serviceName, startPolling])
 
   useEffect(() => {
     if (isTaskRunning) {
@@ -410,7 +415,7 @@ export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateW
       const { data } = await axios.get<TData[]>(
         apiRoutes.pollUpdateComposeStackServiceTask(stackName, serviceName),
         {
-          params: { offset: Math.max(0, messageHistory.length - 1) }
+          params: { host, offset: Math.max(0, messageHistory.length - 1) }
         }
       )
       concatMessageHistory(data)
@@ -426,14 +431,14 @@ export const usePollUpdateComposeStackTask = <TData extends DockerServiceUpdateW
   }
 }
 
-export const useUpdateComposeStackServices = <TData extends DockerServiceUpdateWsMessage>(stackName: string, serviceName: string, options: DockerServiceUpdateRequest = {}) => {
+export const useUpdateComposeStackServices = <TData extends DockerServiceUpdateWsMessage>(host: string, stackName: string, serviceName: string, options: DockerServiceUpdateRequest = {}) => {
   const createTask = useCreateUpdateComposeStackTask(options)
-  const { startPolling, ...rest } = usePollUpdateComposeStackTask<TData>(stackName, serviceName)
+  const { startPolling, ...rest } = usePollUpdateComposeStackTask<TData>(host, stackName, serviceName)
 
   return {
     ...rest,
     updateServices: async () => {
-      await createTask(stackName, [serviceName])
+      await createTask(host, stackName, [serviceName])
       startPolling()
     },
   }

@@ -6,10 +6,11 @@ from typing import Literal, NewType, NotRequired, TypedDict, Unpack
 from .schemas import MessageDict
 from .utils import Singleton
 
+HostStr = NewType('HostStr', str)
 StackStr = NewType('StackStr', str)
 _ServiceStr = NewType('_ServiceStr', str)
 ServiceStr = _ServiceStr | Literal['*']
-StoreKey = tuple[StackStr, ServiceStr]
+StoreKey = tuple[HostStr, StackStr, ServiceStr]
 MessageList = list[MessageDict]
 
 
@@ -69,12 +70,12 @@ class TaskStore(metaclass=Singleton):
             case _:
                 raise ValueError('Invalid type')
 
-    def get(self, key: tuple[StackStr, ServiceStr], default: TaskStoreItem | None = None):
+    def get(self, key: StoreKey, default: TaskStoreItem | None = None):
         item = None
         if key in self._store:
             item = self._store[key]
-        if (key[0], '*') in self._store:
-            item = self._store[(key[0], '*')]
+        if (key[0], key[1], '*') in self._store:
+            item = self._store[(key[0], key[1], '*')]
 
         if (not item or (not item.is_worker_alive()
                          and datetime.now() - item.timestamp > self.ttl)):

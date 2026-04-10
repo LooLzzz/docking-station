@@ -38,6 +38,7 @@ export interface DockerImage extends DockerImageResponse {
 export interface DockerContainerResponse {
   id: string
   createdAt: string
+  host: string
   uptime: string
   hasUpdates: boolean
   homepageUrl?: string
@@ -67,6 +68,7 @@ export interface DockerStackResponse {
   dead: int
   exited: int
   hasUpdates: boolean
+  host: string
   name: string
   paused: int
   restarting: int

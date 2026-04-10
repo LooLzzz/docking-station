@@ -4,15 +4,14 @@ from functools import lru_cache
 from typing import Literal, Tuple
 
 from pydantic import Field, field_validator
-from pydantic_settings import (BaseSettings, PydanticBaseSettingsSource,
-                               SettingsConfigDict, YamlConfigSettingsSource)
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict, YamlConfigSettingsSource
 
 from ..schemas import CamelCaseAliasedBaseModel
 from ..types import Interval
 
 __all__ = [
-    'AppSettings',
-    'get_app_settings',
+    "AppSettings",
+    "get_app_settings",
 ]
 
 
@@ -44,6 +43,7 @@ class ServerSettings(BaseSettings, CamelCaseAliasedBaseModel):
 
     cache_control_max_age: Interval = '1d'
     discovery_strategy: DiscoverStrategyEnum = DiscoverStrategyEnum.OPT_OUT
+    docker_hosts: list[str] = Field(default_factory=lambda: ['localhost'])
     dryrun: bool = False
     enabled_label_field_name: str = 'com.loolzzz.docking-station.enabled'
     ignore_compose_stack_name_keywords: list[str] = Field(default_factory=lambda: ['devcontainer'])

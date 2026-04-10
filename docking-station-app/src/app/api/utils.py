@@ -26,12 +26,13 @@ def tryparse_float(value):
     return None
 
 
-def subprocess_stream_generator(cmd: list[str]):
+def subprocess_stream_generator(cmd: list[str], env: dict[str, str] = None):
     process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        env=env,
     )
 
     line: str

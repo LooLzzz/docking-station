@@ -60,10 +60,10 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     if (!selectedServices.length || services.length === selectedServices.length) {
       refetchComposeStacks()
     } else {
-      selectedServices.forEach(async ({ stackName, serviceName }) => {
+      selectedServices.forEach(async ({ host, stackName, serviceName }) => {
         document.dispatchEvent(
           new CustomEvent<StackServiceRefreshEventDetail>('stack-service-refresh', {
-            detail: { stackName, serviceName },
+            detail: { host, stackName, serviceName },
           }),
         )
         clearSelectedServices()
@@ -85,18 +85,18 @@ export default function BasicAppShell({ children }: { children: React.ReactNode 
     ),
     labels: { confirm: 'Confirm', cancel: 'Cancel' },
     onConfirm: () => {
-      const selectedServicesWithUpdatesByStack = selectedServicesWithUpdates.reduce((acc, service) => {
-        const stackName = service.stackName!
-        acc[stackName] = acc[stackName] || []
-        acc[stackName].push(service)
+      const grouped = selectedServicesWithUpdates.reduce((acc, service) => {
+        const key = `${service.host}/${service.stackName!}`
+        acc[key] = acc[key] || { host: service.host, stackName: service.stackName!, services: [] as typeof selectedServicesWithUpdates }
+        acc[key].services.push(service)
         return acc
-      }, {} as Record<string, typeof selectedServicesWithUpdates>)
+      }, {} as Record<string, { host: string, stackName: string, services: typeof selectedServicesWithUpdates }>)
 
       Object
-        .entries(selectedServicesWithUpdatesByStack)
-        .forEach(([stackName, services]) => {
+        .values(grouped)
+        .forEach(({ host, stackName, services }) => {
           const serviceNames = services.map(({ serviceName }) => serviceName!)
-          createUpdateComposeStackTask(stackName, serviceNames)
+          createUpdateComposeStackTask(host, stackName, serviceNames)
         })
 
       clearSelectedServices()

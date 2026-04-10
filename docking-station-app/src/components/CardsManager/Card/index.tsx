@@ -41,6 +41,7 @@ import ExecutionDetails from './ExecutionDetails'
 import classes from './index.module.scss'
 
 interface CardProps extends Omit<React.DOMAttributes<HTMLDivElement>, 'onSelect'>, MantineCardProps {
+  host: string
   stackName: string
   serviceName: string
   selected?: boolean
@@ -49,6 +50,7 @@ interface CardProps extends Omit<React.DOMAttributes<HTMLDivElement>, 'onSelect'
 
 
 export default function Card({
+  host,
   stackName,
   serviceName,
   selected,
@@ -70,8 +72,8 @@ export default function Card({
   const { isRefetching: isLoadingParents } = useListComposeStacks({
     enabled: false, // no auto-fetch
   })
-  const { updateServices, isPolling, lastMessage, messageHistory } = useUpdateComposeStackServices(stackName, serviceName, { pruneImages: true })
-  const { data, refetch, isRefetching, isLoading } = useGetComposeService(stackName, serviceName, {
+  const { updateServices, isPolling, lastMessage, messageHistory } = useUpdateComposeStackServices(host, stackName, serviceName, { pruneImages: true })
+  const { data, refetch, isRefetching, isLoading } = useGetComposeService(host, stackName, serviceName, {
     enabled: false,  // no auto-fetch
     meta: { noCache: true },
   })

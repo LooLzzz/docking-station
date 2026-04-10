@@ -23,6 +23,7 @@ class DockerContainerPort(AliasedBaseModel):
 class DockerContainer(AliasedBaseModel):
     id: str
     created_at: datetime
+    host: str = 'localhost'
     uptime: str | timedelta
     image: DockerImage | None
     labels: dict[str, str]

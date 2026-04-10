@@ -18,20 +18,19 @@
       }
     ],
     "paths": {
-      "@/*": ["/*"],
-      "@/components": ["components"],
-      "@/components/*": ["components/*"],
-      "@/hooks": ["hooks"],
-      "@/hooks/*": ["hooks/*"],
-      "@/mantineTheme": ["mantineTheme.ts"],
-      "@/public/*": ["../public/*"],
-      "@/routes": ["routes.ts"],
-      "@/store": ["store"],
-      "@/store/*": ["store/*"],
-      "@/types": ["types.d.ts"],
-      "@/utils": ["utils.ts"],
-    },
-    "baseUrl": "./src"
+      "@/*": ["./src/*"],
+      "@/components": ["./src/components"],
+      "@/components/*": ["./src/components/*"],
+      "@/hooks": ["./src/hooks"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/mantineTheme": ["./src/mantineTheme.ts"],
+      "@/public/*": ["./public/*"],
+      "@/routes": ["./src/routes.ts"],
+      "@/store": ["./src/store"],
+      "@/store/*": ["./src/store/*"],
+      "@/types": ["./src/types.d.ts"],
+      "@/utils": ["./src/utils.ts"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

@@ -4,9 +4,9 @@ from logging import getLogger
 from threading import Thread
 
 from fastapi import HTTPException
-from python_on_whales import DockerClient, docker
+from python_on_whales import DockerClient
 from python_on_whales.components.container.cli_wrapper import Container as WhalesContainer
-from python_on_whales.components.container.cli_wrapper import DockerContainerListFilters
+from python_on_whales.components.container.cli_wrapper import ContainerListFilter as WhalesContainerListFilter
 from python_on_whales.components.image.cli_wrapper import Image as WhalesImage
 
 from ..schemas import DockerContainer, DockerImage, DockerStack, MessageDict
@@ -15,21 +15,22 @@ from ..utils import subprocess_stream_generator
 from .regctl import get_image_inspect, get_image_remote_digest
 
 __all__ = [
-    'get_compose_service_container',
-    'get_compose_stack',
-    'get_image',
-    'list_compose_stacks',
-    'list_containers',
-    'list_images',
-    'update_compose_stack_ws',
-    'update_compose_stack',
+    "get_compose_service_container",
+    "get_compose_stack",
+    "get_image",
+    "list_compose_stacks",
+    "list_containers",
+    "list_images",
+    "update_compose_stack",
+    "update_compose_stack_ws",
 ]
 
 logger = getLogger(__name__)
 app_settings = get_app_settings()
 
 
-async def list_containers(filters: DockerContainerListFilters = None,
+async def list_containers(client: DockerClient,
+                          filters: WhalesContainerListFilter = None,
                           include_stopped: bool = False,
                           no_cache: bool = False):
 
@@ -45,6 +46,7 @@ async def list_containers(filters: DockerContainerListFilters = None,
             name=container.name,
             ports=container.network_settings.ports,
             status=container.state.status,
+            host=client.client_config.host or 'localhost',
         )
 
         if not res.dockingstation_enabled:
@@ -54,12 +56,13 @@ async def list_containers(filters: DockerContainerListFilters = None,
                                            .removeprefix('registry.hub.docker.com/')
                                            .removeprefix('library/'))
         res.image = await get_image(
+            client=client,
             repository_or_tag=image_tag,
             no_cache=no_cache,
         )
         return res
 
-    _containers = docker.container.list(
+    _containers = client.container.list(
         all=include_stopped,
         filters=filters or {},
     )
@@ -78,7 +81,8 @@ async def list_containers(filters: DockerContainerListFilters = None,
     )
 
 
-async def list_images(repository_or_tag: str = None,
+async def list_images(client: DockerClient,
+                      repository_or_tag: str = None,
                       filters: dict[str, str] = None,
                       no_cache: bool = False):
 
@@ -125,7 +129,7 @@ async def list_images(repository_or_tag: str = None,
     for prefix in app_settings.server.python_on_whales__ignored_image_prefixes:
         clean_repository_or_tag = clean_repository_or_tag.removeprefix(prefix)
 
-    _images = docker.image.list(
+    _images = client.image.list(
         repository_or_tag=clean_repository_or_tag,
         filters=filters or {},
     )
@@ -141,9 +145,11 @@ async def list_images(repository_or_tag: str = None,
     )
 
 
-async def get_image(repository_or_tag: str,
+async def get_image(client: DockerClient,
+                    repository_or_tag: str,
                     no_cache: bool = False):
     images = await list_images(
+        client=client,
         repository_or_tag=repository_or_tag,
         no_cache=no_cache,
     )
@@ -152,7 +158,8 @@ async def get_image(repository_or_tag: str,
     return images[0]
 
 
-async def list_compose_stacks(filters: DockerContainerListFilters = None,
+async def list_compose_stacks(client: DockerClient,
+                              filters: WhalesContainerListFilter = None,
                               include_stopped: bool = False,
                               no_cache: bool = False):
 
@@ -161,13 +168,15 @@ async def list_compose_stacks(filters: DockerContainerListFilters = None,
         nonlocal no_cache
 
         stack.services = await list_containers(
+            client=client,
             filters={'label': f'com.docker.compose.project={stack.name}'},
             include_stopped=include_stopped,
             no_cache=no_cache,
         )
+        stack.host = client.client_config.host or 'localhost'
         return stack
 
-    _stacks = docker.compose.ls(all=include_stopped, filters=filters or {})
+    _stacks = client.compose.ls(all=include_stopped, filters=filters or {})
     stacks = await asyncio.gather(*[
         _task(DockerStack.model_validate(stack))
         for stack in _stacks
@@ -185,9 +194,11 @@ async def list_compose_stacks(filters: DockerContainerListFilters = None,
     )
 
 
-async def get_compose_stack(stack_name: str,
+async def get_compose_stack(client: DockerClient,
+                            stack_name: str,
                             no_cache: bool = False):
     stacks = await list_compose_stacks(
+        client=client,
         filters={'name': stack_name},
         no_cache=no_cache,
     )
@@ -196,10 +207,11 @@ async def get_compose_stack(stack_name: str,
     return stacks[0]
 
 
-async def get_compose_service_container(stack_name: str,
+async def get_compose_service_container(client: DockerClient,
+                                        stack_name: str,
                                         service_name: str,
                                         no_cache: bool = False):
-    stack = await get_compose_stack(stack_name)
+    stack = await get_compose_stack(client, stack_name)
     container = next(
         (item
          for item in stack.services
@@ -210,13 +222,15 @@ async def get_compose_service_container(stack_name: str,
         raise KeyError(service_name)
 
     container.image = await get_image(
-        container.image.repo_tag,
+        client=client,
+        repository_or_tag=container.image.repo_tag,
         no_cache=no_cache,
     )
     return container
 
 
-async def update_compose_stack(stack_name: str,
+async def update_compose_stack(client: DockerClient,
+                               stack_name: str,
                                service_name: str = None,
                                infer_envfile: bool = True,
                                restart_containers: bool = True,
@@ -226,7 +240,7 @@ async def update_compose_stack(stack_name: str,
     output = []
 
     stack = next(iter(
-        docker.compose.ls(
+        client.compose.ls(
             filters={'name': stack_name},
         )
     ), None)
@@ -239,6 +253,12 @@ async def update_compose_stack(stack_name: str,
 
     config_files = stack.config_files
 
+    if client.client_config.host is not None:
+        raise HTTPException(
+            status_code=400,
+            detail=f'Updating remote docker host stacks is not implemented yet (host={client.client_config.host!r})',
+        )
+
     if infer_envfile:
         for p in config_files:
             if p.with_suffix('.env').exists():
@@ -248,7 +268,8 @@ async def update_compose_stack(stack_name: str,
                 env_file = p.with_name('.env')
                 break
 
-    client = DockerClient(
+    compose_client = DockerClient(
+        host=client.client_config.host,
         compose_files=config_files,
         compose_env_file=env_file,
     )
@@ -260,7 +281,7 @@ async def update_compose_stack(stack_name: str,
         output.extend([
             line.decode().strip()
             for (_std_type, line)
-            in client.compose.up(
+            in compose_client.compose.up(
                 services=service_name,
                 pull='always',
                 detach=True,
@@ -273,7 +294,7 @@ async def update_compose_stack(stack_name: str,
         output.extend([
             line.decode().strip()
             for (_std_type, line)
-            in client.compose.pull(
+            in compose_client.compose.pull(
                 services=service_name,
                 stream_logs=True,
             )
@@ -291,7 +312,7 @@ async def update_compose_stack(stack_name: str,
     # success = is container running
     container_status = all(
         container.state.running
-        for container in docker.container.list(
+        for container in client.container.list(
             filters={'label': f'com.docker.compose.project={stack_name}'},
             all=True,
         )
@@ -304,13 +325,15 @@ async def update_compose_stack(stack_name: str,
     }
 
 
-def update_compose_stack_ws(stack_name: str,
+def update_compose_stack_ws(host: str,
+                            stack_name: str,
                             services: list[str] = [],
                             infer_envfile: bool = True,
                             restart_containers: bool = True,
                             prune_images: bool = False):
 
     async def _task(queue: asyncio.Queue[MessageDict]):
+        nonlocal host
         nonlocal stack_name
         nonlocal services
         nonlocal infer_envfile
@@ -320,8 +343,9 @@ def update_compose_stack_ws(stack_name: str,
         env_file = None
         config_files = None
 
+        client = DockerClient() if host == 'localhost' else DockerClient(host=host)
         stack = next(iter(
-            docker.compose.ls(
+            client.compose.ls(
                 filters={'name': stack_name},
             )
         ), None)
@@ -330,6 +354,9 @@ def update_compose_stack_ws(stack_name: str,
             raise ValueError(f'Compose stack {stack_name!r} not found')
 
         config_files = stack.config_files
+
+        if host != 'localhost':
+            raise ValueError(f'Updating remote docker host stacks is not implemented yet (host={host!r})')
 
         if infer_envfile:
             for p in config_files:
@@ -344,17 +371,25 @@ def update_compose_stack_ws(stack_name: str,
             MessageDict(stage='Starting')
         )
 
-        config_file_cmd = ['-f', *config_files] if config_files else []
-        env_file_cmd = ['--env-file', env_file] if env_file else []
+        compose_cmd = [arg for f in config_files for arg in ('-f', str(f))]
+        if env_file:
+            compose_cmd.extend(['--env-file', str(env_file)])
         pull_cmd = ['--pull', 'always'] if not app_settings.server.dryrun else []
-        stdout = subprocess_stream_generator([
-            'docker', 'compose',
-            *config_file_cmd,
-            *env_file_cmd,
-            'up', '-d',
-            *pull_cmd,
-            *services,
-        ])
+
+        subprocess_env = {}
+        if host != 'localhost':
+            subprocess_env['DOCKER_HOST'] = host
+
+        stdout = subprocess_stream_generator(
+            cmd=[
+                'docker', 'compose',
+                *compose_cmd,
+                'up', '-d',
+                *pull_cmd,
+                *services,
+            ],
+            env=subprocess_env,
+        )
         for line in stdout:
             queue.put_nowait(
                 MessageDict(
@@ -385,9 +420,10 @@ def update_compose_stack_ws(stack_name: str,
                         )
                     )
             else:
-                stdout = subprocess_stream_generator([
-                    'docker', 'image', 'prune', '-f'
-                ])
+                stdout = subprocess_stream_generator(
+                    cmd=['docker', 'image', 'prune', '-f'],
+                    env=subprocess_env,
+                )
                 for line in stdout:
                     queue.put_nowait(
                         MessageDict(

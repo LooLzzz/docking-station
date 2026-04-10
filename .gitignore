@@ -1,6 +1,8 @@
 .vscode/
 .env
 /app
+data/*
+!data/.gitkeep
 
 !.devcontainer/.env
 
