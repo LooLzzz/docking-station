@@ -13,8 +13,6 @@ from fastapi_cache.coder import Coder
 from pydantic import BaseModel
 from sqlmodel import Session, col, delete
 
-from ..models import FastAPICacheItem, engine
-
 if sys.version_info >= (3, 10):
     from typing import ParamSpec
 else:
@@ -25,9 +23,9 @@ P = ParamSpec('P')
 R = TypeVar('R')
 
 __all__ = [
-    'cache_key_builder',
-    'cached',
-    'SQLiteBackend',
+    "SQLiteBackend",
+    "cache_key_builder",
+    "cached",
 ]
 
 
@@ -253,6 +251,9 @@ class SQLiteBackend(Backend):
         return int(time.time())
 
     def _get(self, key: str):
+        # import here to avoid circular import
+        from ..models import FastAPICacheItem, engine
+
         with Session(engine) as session:
             if obj := session.get(FastAPICacheItem, key):
                 if obj.ttl_ts < self._now():
@@ -275,6 +276,9 @@ class SQLiteBackend(Backend):
     async def set(self, key: str, value: str, expire: int = None):
         """set or upsert a cache item in the database."""
 
+        # import here to avoid circular import
+        from ..models import FastAPICacheItem, engine
+
         ttl_ts = self._now() + (expire or 0)
         with Session(engine) as session:
             if obj := session.get(FastAPICacheItem, key):
@@ -291,6 +295,9 @@ class SQLiteBackend(Backend):
             return obj
 
     async def clear(self, namespace: str = None, key: str = None) -> int:
+        # import here to avoid circular import
+        from ..models import FastAPICacheItem, engine
+
         query = None
         count = 0
 

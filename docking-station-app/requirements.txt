@@ -1,8 +1,0 @@
-aiohttp==3.9.5
-fastapi-cache2==0.2.1
-fastapi==0.111.0
-pydantic_settings==2.2.1
-python-on-whales==0.71.0
-pytimeparse==1.1.8
-sqlmodel==0.0.18
-websockets==12.0

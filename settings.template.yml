@@ -2,6 +2,10 @@
 server:
   cache_control_max_age: 1d
   discovery_strategy: opt-out
+  docker_hosts:
+    - localhost
+    # - ssh://user@remote-host
+    # - tcp://10.0.0.5:2375
   dryrun: false
   ignore_compose_stack_name_keywords:
     - devcontainer

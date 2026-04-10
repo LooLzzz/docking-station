@@ -3,6 +3,6 @@
 cd ./docking-station-app
 
 ln -snf /app ../app
-concurrently --names=BUN,PIP --prefix-colors=auto \
+concurrently --names=BUN,UV --prefix-colors=auto \
     "bun install" \
-    "pip install notebook -r requirements.txt"
+    "uv sync --all-groups"

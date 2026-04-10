@@ -1,15 +1,17 @@
 from itertools import chain
+from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from .. import routes
+from ..dependencies import DockerClients, get_docker_clients
 from ..schemas import DockerStack, DockerStackRootModel, GetStatsResponse
 from ..settings import AppSettings, get_app_settings
 from .regctl import router as regctl_router
 from .stacks import router as stacks_router
 
 __all__ = [
-    'router',
+    "router",
 ]
 
 app_settings = get_app_settings()
@@ -32,8 +34,12 @@ async def get_settings():
 
 
 @router.get('/stats', tags=['Misc'], response_model=GetStatsResponse)
-async def get_stats(no_cache: bool = False):
-    _stacks = await routes.stacks.list_compose_stacks(no_cache=no_cache)
+async def get_stats(docker_clients: Annotated[DockerClients, Depends(get_docker_clients)],
+                    no_cache: bool = False):
+    _stacks = await routes.stacks.list_compose_stacks(
+        docker_clients=docker_clients,
+        no_cache=no_cache,
+    )
     stacks = DockerStackRootModel.model_validate(_stacks)
 
     num_of_services_with_updates = 0

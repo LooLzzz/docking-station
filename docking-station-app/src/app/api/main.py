@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi_cache import FastAPICache
 from pydantic import ValidationError
+from python_on_whales import DockerClient
 
 from . import routes
 from .settings import ServerLogSettings, SQLiteBackend, cache_key_builder, get_app_settings
@@ -16,10 +17,16 @@ from .settings import ServerLogSettings, SQLiteBackend, cache_key_builder, get_a
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     dictConfig(ServerLogSettings().model_dump())
+
+    from .models import engine  # noqa; init sqlmodel and create tables
     FastAPICache.init(
         backend=SQLiteBackend(),
         key_builder=cache_key_builder,
     )
+    app.state.docker_clients = {
+        host: DockerClient() if host == 'localhost' else DockerClient(host=host)
+        for host in app_settings.server.docker_hosts
+    }
     yield
 
 app_settings = get_app_settings()

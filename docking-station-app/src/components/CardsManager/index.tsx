@@ -32,9 +32,10 @@ export default function CardsManager() {
     <div>
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3, xl: 4, xxxl: 5 }}>
         {
-          services.map(({ stackName, serviceName }) => (
+          services.map(({ host, stackName, serviceName }) => (
             <Card
-              key={`${stackName}/${serviceName}`}
+              key={`${host}/${stackName}/${serviceName}`}
+              host={host}
               stackName={stackName!}
               serviceName={serviceName!}
               onSelect={(selected) => handleSelect(selected, stackName!, serviceName!)}

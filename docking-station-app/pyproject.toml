@@ -1,0 +1,25 @@
+[project]
+name = "docking-station-app"
+version = "0.5.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.12.14",
+    "fastapi-cache2>=0.2.2",
+    "fastapi[standard]>=0.116.1",
+    "orjson>=3.11.8",
+    "pydantic_settings>=2.10.1",
+    "python-on-whales>=0.78.0",
+    "pytimeparse>=1.1.8",
+    "sqlmodel>=0.0.24",
+    "websockets>=15.0",
+]
+
+[dependency-groups]
+dev = [
+    "autopep8",
+    "isort",
+    "notebook",
+    "sort-all",
+]
