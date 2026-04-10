@@ -30,6 +30,7 @@ import {
   IconExternalLink,
   IconListDetails,
   IconRefresh,
+  IconServer,
   IconSquare,
   IconSquareCheck,
   IconStack2,
@@ -307,6 +308,27 @@ export default function Card({
             {data?.stackName}
           </Text>
         </Group>
+
+        {
+          data?.host && data.host !== 'localhost' &&
+          <Group wrap='nowrap'>
+            <Tooltip withArrow label='Host'>
+              <IconServer
+                color='gray'
+                size={16}
+                stroke={2.5}
+              />
+            </Tooltip>
+            <Text
+              style={{ fontSize: 'var(--mantine-h6-font-size)' }}
+              w={rem(250)}
+              truncate='end'
+              title={data.host}
+            >
+              {data.host}
+            </Text>
+          </Group>
+        }
 
         <Group wrap='nowrap'>
           <Tooltip withArrow label='Image'>
