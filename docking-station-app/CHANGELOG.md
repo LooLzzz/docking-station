@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/LooLzzz/docking-station/compare/v0.5.0...v0.6.0) (2026-04-10)
+
+
+### Features
+
+* **api:** add remote docker host discovery support ([5d763d7](https://github.com/LooLzzz/docking-station/commit/5d763d7326873f70ead62775ed1ffef766648e02))
+
 ## [0.5.0](https://github.com/LooLzzz/docking-station/compare/v0.4.2...v0.5.0) (2025-03-17)
 
 
